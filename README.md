@@ -1,7 +1,7 @@
 ![Logo](Qassfilt_logo_cut.png)
 ###### Color-based Pokémon ;-)
 # QAssfilt
-QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for generating and visualizing reports.
+QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for generating and visualizing reports. For those who worry a lot about the quality of the genome, running QAssfilt will give you an idea of what to do with your data.
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built without using containers, starting from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis. Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer.
 # Quick guide
@@ -148,13 +148,13 @@ qassfilt -i /path/input_dir -o /path/output_dir --skip "FASTP"
 ```
 This will skip the FASTP step and run SPAdes automatically by finding paired-end FASTQ files in the input directories.
 ##### --fastp
-This option provides free access to the options and parameters of fastp (please see the fastp instructions: https://github.com/OpenGene/fastp). (default: none)
+This option provides free access to the options and parameters of fastp (please see the fastp instructions: https://github.com/OpenGene/fastp). (default: none).
 For example:
 ```
 qassfilt -i /path/input_dir -o /path/output_dir --fastp "-q 30 -u 30"
 ```
 ##### --spades
-This option provides free access to the options and parameters of SPAdes (please see the SPAdes instructions: https://github.com/ablab/spades). (default: none)
+This option provides free access to the options and parameters of SPAdes (please see the SPAdes instructions: https://github.com/ablab/spades). (default: none). For example:
 ```
 qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
 ```
