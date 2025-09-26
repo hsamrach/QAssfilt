@@ -1,0 +1,24 @@
+package:
+  name: qassfilt
+  version: "1.1"
+
+source:
+  path: /srv/samrach/qassfilt_recipe
+
+build:
+  number: 0
+
+requirements:
+  host:
+    - bash
+  run:
+    - bash
+
+about:
+  home: "https://github.com/hsamrach/QAssfilt"
+  summary: "Qassfilt is a ready-to-use filtering assembled genome pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses."
+  license: GPL-3.0-only
+
+extra:
+  recipe-maintainers:
+    - samrach
