@@ -170,4 +170,4 @@ QAssfilt is free for everyone, and released under [GPL (version 3)](https://gith
 ## Issues
 Any comments and suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
-QAssfilt is built on the concept of Praveen Rahi, initially developed by Furqan Khan, and fully re-built using shell scripts by Samrach Han with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
+QAssfilt is built on the concept of Praveen Rahi, initially developed by Furqan Khan, and fully re-built in advance using shell scripts by Samrach Han with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
