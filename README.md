@@ -4,7 +4,6 @@ QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high
 # Installation
 ## Conda installation
 Before installing QAssfilt, you have to have conda installed in your terminal. If you are new to conda, I suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
-If you are Linux user, download the link below:
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
