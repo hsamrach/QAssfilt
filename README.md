@@ -7,18 +7,20 @@ QAssfilt works only via Conda and is designed specifically for Illumina paired-e
 # Quick guide
 Initialization is needed after installing QAssfilt. Please see [Initialization](https://github.com/hsamrach/QAssfilt/edit/main/README.md#initialization) section.
 ```
-# Basic user
+# Basicer
 qassfilt -i /path/input_dir -o /path/output_dir
 or
 qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database
-# Advanced user
+
+# Advancer
 qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database -id 2 --fastp "-q 30 -u 30" --spades "--isolate"
+
 # Users unsatisfied with the default options
 qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -st 64 -ft 32 -ct 64 -qt 64 -mc 50 -ml 1000 --skip "FASTP"
 ```
 # Installation
 ## Conda installation
-Before installing QAssfilt, you have to have conda installed in your terminal. If you are new to conda, I suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
+Before installing QAssfilt, you have to have conda installed in your terminal. If you are new to conda, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
@@ -58,7 +60,7 @@ qassfilt -h # to show help
 ## Initialization
 After successfully installing QAssfilt, you will have two choices for initialization:
 ### 1. Automatically initialized
-You can use <--INITIAL, -ini> for automatic initialization by checking and installing tools and environments, and also download checkm2 database if the option --CHECKM2DB_PATH, -d is not use.
+You can use --INITIAL, -ini for automatic initialization by checking and installing tools and environments, and also download checkm2 database if the option --CHECKM2DB_PATH, -d is not use.
 ```
 qassfilt -ini
 ```
@@ -158,6 +160,8 @@ This option provides free access to the options and parameters of SPAdes (please
 ```
 qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
 ```
+## Resume function
+QAssfilt is resumable by simply retyping the previous command that was interrupted. The resume mechanism works by scanning the last log file containing the sample_ID and step information to determine where to restart. It then checks whether the final output file exists. If it does, Qassfilt proceeds to the next step; if not, it reruns the current step recorded in the log file.
 # Dependencies
 QAssfilt uses the following dependency tools:
 - [fastp](https://github.com/OpenGene/fastp)
