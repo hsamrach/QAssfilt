@@ -110,18 +110,31 @@ So it will pick up only the fastq files in input_dir and subdirectory1. To make 
 During and after running, QAssfilt will produce:
 ```
 output_dir/
+|
 ├── logs: Log file of each step run, including errors and information in detail.
+|
 ├── spades_file: Raw output directory of each sample of the spades step.
+|
 ├── contigs_before: Raw contig files, renamed based on sample ID (before filtering).
+|
 ├── contigs_filtered: filtered contig files of each sample ID.
+|
 ├── quast_before: Quast output from unfiltered contig files.
+|
 ├── quast_after: Quast output from filtered contig files.
+|
 ├── checkm2_before: CheckM2 output from unfiltered contig files.
+|
 ├── checkm2_after: CheckM2 output from filtered contig files.
+|
 ├── multiqc_reports/
+|
 │   ├── fastp: An HTML file for viewing the report from fastp.
+|   |
 │   └── Assembly_qc: An HTML file for viewing the report from Quast and CheckM2, including before and after filtering.
+|
 ├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
+|
 └── parameters.txt: Options and parameters used in pipeline.
 ```
 ## Options and Parameters
