@@ -1,7 +1,7 @@
 ![Logo](Qassfilt_logo_cut.png)
 ###### Color-based Pokémon ;-)
 # QAssfilt
-QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for aggregating and visualizing reports of raw data and genome assembly qualities. For those who worry a lot about the quality of the genome, running QAssfilt will help remove the unwanted contigs based on coverage and length (bp).
+QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for aggregating and visualizing reports of raw data and genome assembly qualities. For those who worry a lot about the quality of the genome (contamination or misassemblies), running QAssfilt will help remove the unwanted contigs based on coverage and length (bp).
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built without using containers, starting from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis. Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer.
 # Quick guide
@@ -116,10 +116,10 @@ or
 qassfilt -ini -d /PATH/databases/CheckM2_database
 ```
 QAssfilt will check the environment and calling version of each tool. If it is working okay, initialization is completed without installing any tool.
-## Input file format
+## Input file format (--INPUT_PATH, -i [DIR])
 QAssfilt works only on Illumina paired-end reads, but all fastq file extensions, including gz format.
 The very nice thing from QAssfilt is that you need to give only the input directory, and then it will scan for each pair of fastq files. Suppose you have files in different subdirectories of the input directory. In that case, you can also use the option --INPUT_DIR_DEPTH, -id, so that it will scan each subdirectory based on the number of DEPTH you provided.
-Example:
+For example:
 ```
 qassfilt -i /path/input_dir -id 2 -o /path/output-dir
 
@@ -134,7 +134,7 @@ input_dir/
     └── file3_2.fq.gz
 ```
 So it will pick up only the fastq files in input_dir and subdirectory1. To make it also pick up subdirectory2, you can use -id 3.
-## Output file and directory
+## Output file and directory (--OUTPUT_PATH, -o [DIR])
 During and after running, QAssfilt will produce:
 ```
 output_dir/
@@ -143,7 +143,7 @@ output_dir/
 |
 ├── spades_file: Raw output directory of each sample of the spades step.
 |
-├── contigs_before: Raw contig files, renamed based on sample ID (before filtering).
+├── contigs_before: Original contig files from SPAdes, renamed based on sample ID (before filtering).
 |
 ├── contigs_filtered: filtered contig files of each sample ID.
 |
@@ -156,14 +156,14 @@ output_dir/
 ├── checkm2_after: CheckM2 output from filtered contig files.
 |
 ├── multiqc_reports/
-|
+|   |
 │   ├── fastp: An HTML file for viewing the report from fastp.
 |   |
 │   └── Assembly_qc: An HTML file for viewing the report from Quast and CheckM2, including before and after filtering.
 |
 ├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
 |
-└── parameters.txt: Options and parameters used in pipeline.
+└── pipeline_parameters.txt: Options and parameters used in pipeline.
 ```
 ## Options and Parameters
 ##### --CONTIGS, -cg
