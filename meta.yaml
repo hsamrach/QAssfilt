@@ -3,10 +3,14 @@ package:
   version: "1.1"
 
 source:
-  path: /srv/samrach/qassfilt_recipe
+  url: https://github.com/hsamrach/QAssfilt/archive/refs/tags/qassfilt_v1.1.tar.gz
+  sha256: 58f50ae9cd6a5dda9730a2e40a79bce24beff7751ff0046d6de9150f94930322
 
 build:
   number: 0
+  script: |
+    chmod +x QAssfilt-qassfilt_v1.1/qassfilt.sh
+    mv QAssfilt-qassfilt_v1.1/qassfilt.sh ${PREFIX}/bin/qassfilt
 
 requirements:
   host:
@@ -15,10 +19,11 @@ requirements:
     - bash
 
 about:
-  home: "https://github.com/hsamrach/QAssfilt"
-  summary: "Qassfilt is a ready-to-use filtering assembled genome pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses."
+  home: https://github.com/hsamrach/QAssfilt
   license: GPL-3.0-only
+  summary: "QAssfilt: a ready-to-use genome assembly quality filtering pipeline"
+  license_file: LICENSE
 
-extra:
-  recipe-maintainers:
-    - samrach
+test:
+  commands:
+    - qassfilt --help
