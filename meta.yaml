@@ -7,7 +7,7 @@ source:
   sha256: 58f50ae9cd6a5dda9730a2e40a79bce24beff7751ff0046d6de9150f94930322
 
 build:
-  number: 0
+  number: 1
   script: |
     chmod +x QAssfilt-qassfilt_v1.1/qassfilt.sh
     mv QAssfilt-qassfilt_v1.1/qassfilt.sh ${PREFIX}/bin/qassfilt
