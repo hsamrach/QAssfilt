@@ -1,7 +1,7 @@
 ![Logo](Qassfilt_logo_cut.png)
 ###### Color-based Pokémon ;-)
 # QAssfilt
-QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for aggregating and visualizing reports of raw data and genome assembly qualities. For those who worry a lot about the quality of the genome, running QAssfilt will give you an idea of what to do with your data.
+QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is highly automated and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. This pipeline workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for aggregating and visualizing reports of raw data and genome assembly qualities. For those who worry a lot about the quality of the genome, running QAssfilt will help remove the unwanted contigs based on coverage and length (bp).
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built without using containers, starting from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis. Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer.
 # Quick guide
@@ -57,6 +57,34 @@ chmod +x qassfilt.sh
 qassfilt -h # to show help
 ```
 # Usage
+```
+Usage: qassfilt -i ~/dir -o ~/dir [options]
+
+  --INITIAL, -ini                       Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)
+  --INPUT_PATH, -i [DIR]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
+  --CONTIGS, -cg                        Enable contig mode (flag option)
+                                        This will scan for fasta (.fa .fasta .fas .fna) in INPUT_PATH
+  --OUTPUT_PATH, -o [DIR]               Path to output directory
+  --INPUT_DIR_DEPTH, -id [INT]          Define directories to be scanned for fastq file (default: 1)
+                                        e.g.: -id 1 will scan for only files in INPUT_PATH directory
+                                        e.g.: -id 2 will scan all files in INPUT_PATH subdirectories
+  --CHECKM2DB_PATH, -d [DIR]            Path to checkm2 database directory (optional; if not given, pipeline will auto-manage)
+  --SPADES_THREADS, -st [INT]           Threads for spades (default: 32)
+  --FASTP_THREADS, -ft [INT]            Threads for fastp (default: 16)
+  --CHECKM2_THREADS, -ct [INT]          Threads for CheckM2 (default: 16)
+  --QUAST_THREADS, -qt [INT]            Threads for QUAST (default: 16)
+  --QUAST_REFERENCE, -qr [FILE]         Path to reference sequence for QUAST (optional)
+  --SEQKIT_MIN_COV, -mc [INT]           Minimum (≤) contig coverage to be filtered (default: 10)
+  --SEQKIT_MIN_LENGTH, -ml [INT]        Minimum (≤) contig length to be filtered (default: 500)
+  --skip [LIST]                         Skip tool(s) you don't want to use in the pipeline (space-separated)
+                                        e.g.: --skip "FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a MULTIQC"
+  --fastp [STRING]                      Options/parameters to pass directly to fastp
+                                        e.g.: "-q 30 -u 30 -e 15 -l 50 -5 -3"
+  --spades [STRING]                     Options/parameters to pass directly to SPAdes
+                                        e.g.: "--isolate --careful --cov-cutoff auto"
+  --version, -v                         Check QAssfilt version
+  --help, -h                            Show this help message and exit
+```
 ## Initialization
 After successfully installing QAssfilt, you will have two choices for initialization:
 ### 1. Automatically initialized
@@ -102,8 +130,8 @@ input_dir/
 │   ├── file2_1.fastq
 │   └── file2_2.fastq
 └── subdirectory2/
-    ├── file3_1.fastq
-    └── file3_2.fastq
+    ├── file3_1.fq.gz
+    └── file3_2.fq.gz
 ```
 So it will pick up only the fastq files in input_dir and subdirectory1. To make it also pick up subdirectory2, you can use -id 3.
 ## Output file and directory
@@ -143,7 +171,7 @@ Suppose you already have your assembled genome as contig files, but you would li
 ##### --CHECKM2DB_PATH, -d
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
 ##### --SEQKIT_MIN_COV, -mc
-This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --CONTIGS, -cg, make sure your contig headers contain coverage information. If they don’t, please set it to 0.
+This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --CONTIGS, -cg, make sure your contig headers contain coverage information.
 For example:
 ```
 NODE_1_length_12345_cov_37.8
@@ -163,13 +191,13 @@ qassfilt -i /path/input_dir -o /path/output_dir --skip "FASTP"
 ```
 This will skip the FASTP step and run SPAdes automatically by finding paired-end FASTQ files in the input directories.
 ##### --fastp
-This option provides free access to the options and parameters of fastp (please see the fastp instructions: https://github.com/OpenGene/fastp). (default: none).
+This option provides free access to the options and parameters of fastp (please see the fastp instructions: https://github.com/OpenGene/fastp).
 For example:
 ```
 qassfilt -i /path/input_dir -o /path/output_dir --fastp "-q 30 -u 30"
 ```
 ##### --spades
-This option provides free access to the options and parameters of SPAdes (please see the SPAdes instructions: https://github.com/ablab/spades). (default: none). For example:
+This option provides free access to the options and parameters of SPAdes (please see the SPAdes instructions: https://github.com/ablab/spades). For example:
 ```
 qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
 ```
@@ -189,4 +217,4 @@ QAssfilt is free for everyone, and released under [GPL (version 3)](https://gith
 ## Issues
 Any comments and suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
-QAssfilt is built on the concept of [Praveen Rahi](https://github.com/RahiPraveen), initially developed by Furqan Khan, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
+QAssfilt is built on the concept of [Praveen Rahi](https://github.com/RahiPraveen), initially built by Furqan Khan, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
