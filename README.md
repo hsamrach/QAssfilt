@@ -41,7 +41,8 @@ Update to the latest version of conda:
 ```
 conda update -n base -c defaults conda
 ```
-Now you have your conda installed and activated via miniconda3
+Now you have your conda installed and activated via miniconda3.
+The installation above is for Linux OS only. If you are using others, please find it via this link: wget https://repo.anaconda.com/miniconda and choose the one which suit with you.
 ## QAssfilt installation
 Currently, QAssfilt isn't available on conda-forge, but you could install it via my channel:
 ```
