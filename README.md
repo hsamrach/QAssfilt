@@ -204,7 +204,7 @@ This option provides free access to the options and parameters of SPAdes (please
 qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
 ```
 ## Resume function
-QAssfilt is resumable by simply retyping the previous command that was interrupted. The resume mechanism works by scanning the last log file containing the sample_ID and step information to determine where to restart. It then checks whether the final output file exists. If it does, Qassfilt proceeds to the next step; if not, it reruns the current step recorded in the log file.
+QAssfilt is resumable by simply retyping the previous command that was interrupted. The resume mechanism works by scanning the last incomplete step and sample to determine where to restart. It then checks whether the final output file exists. If it does, Qassfilt proceeds to the next step; if not, it reruns the current step recorded in the log file.
 # Dependencies
 QAssfilt uses the following dependency tools:
 - [fastp](https://github.com/OpenGene/fastp)
@@ -219,4 +219,4 @@ QAssfilt is free for everyone, and released under [GPL (version 3)](https://gith
 ## Issues
 Any comments and suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
-QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by Furqan Khan, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
+QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902), and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
