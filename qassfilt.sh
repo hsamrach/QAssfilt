@@ -84,8 +84,8 @@ while [[ $# -gt 0 ]]; do
             echo "                             		e.g.: -id 1 will scan for only file in INPUT_PATH directory"
             echo "                             		e.g.: -id 2 will scan all file in INPUT_PATH subdirectories"
             echo "  --CHECKM2DB_PATH, -d [DIR]      	Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
-            echo "  --KRAKEN2_DB_PATH, -kd [DIR]      	Path to KRAKEN2 database directory (enables kraken2 step)"
-            echo "  --GTDBTK_DB_PATH, -gd [DIR]      	Path to GTDBTK database directory (enables gtdbtk step)"
+            echo "  --KRAKEN2_DB_PATH, -kd [DIR]      	Providing path to KRAKEN2 database directory to enables kraken2 step (default: disable)"
+            echo "  --GTDBTK_DB_PATH, -gd [DIR]      	Providing path to GTDBTK database directory to enables gtdbtk step (default: disable)"
             echo "  --SPADES_THREADS, -st [INT]     	Threads for spades (default: $SPADES_THREADS)"
             echo "  --FASTP_THREADS, -ft [INT]      	Threads for fastp (default: $FASTP_THREADS)"
             echo "  --CHECKM2_THREADS, -ct [INT]    	Threads for CheckM2 (default: $CHECKM2_THREADS)"
@@ -99,15 +99,15 @@ while [[ $# -gt 0 ]]; do
             echo "                             		e.g.: --skip \"FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a"
             echo "                             		\"ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC\""
             echo "  --contigs_remove, -cr [FILE]   	Path to file containing contigs to remove."
-            echo "                             		Create a tab file with path to fasta format at column 1 and the contig name at column 2(separated by comma for multiple names)."
+            echo "                             		Create a tab file with the path to the fasta file at column 1 and the contig name at column 2(separated by a comma for multiple names)."
             echo "  --fastp [STRING]                	Options/parameters to pass directly to fastp"
             echo "                             		e.g.: \"-q 30 -u 30 -e 15 -l 50 -5 -3, ...\""
             echo "  --spades [STRING]               	Options/parameters to pass directly to SPAdes"
             echo "                             		e.g.: \"--isolate --careful --cov-cutoff auto, ...\""
-            echo "  --abricate [STRING]             	Options/parameters to pass directly to abricate except --db (enables abricate step)"
+            echo "  --abricate [STRING]             	Options/parameters to pass directly to abricate except \"--db\" to enables abricate step (default: disable)"
             echo "                             		e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80,...\""
-            echo "  --abritamr [STRING]             	Options/parameters to pass directly to abritamr (enables abritamr step)"
-            echo "                             		e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 16 ...\""
+            echo "  --abritamr [STRING]             	Options/parameters to pass directly to abritamr to enables abritamr step (default: disable)"
+            echo "                             		e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 16,...\""
             echo "  --version, -v              		Check QAssfilt version"
             echo "  --help, -h                 		Show this help message and exit"
             echo ""
@@ -1319,7 +1319,7 @@ process_sample() {
     local SPADES_DIR="${OUTPUT_PATH}/spades_file/${SAMPLE}"
 	local CONTIGS_BEFORE_DIR="${OUTPUT_PATH}/contigs_before"
     local FILTERED_DIR="${OUTPUT_PATH}/contigs_filtered"
-    mkdir -p "$LOG_DIR" "$FASTP_DIR" "$SPADES_DIR" "$CONTIGS_BEFORE_DIR" "$FILTERED_DIR"
+    mkdir -p "$LOG_DIR"
 
     # =========================
     # Default file paths
@@ -1347,6 +1347,7 @@ process_sample() {
             update_status "$SAMPLE" "FASTP" "SKIPPED"
         elif should_run_step "$SAMPLE" "FASTP" || [[ ! -s "$OUT1" || ! -s "$OUT2" ]] || [[ ! -s "${FASTP_DIR}/${SAMPLE}_fastp.html" ]] || [[ ! -s "${FASTP_DIR}/${SAMPLE}_fastp.json" ]]; then
             update_status "$SAMPLE" "FASTP" "RUNNING"
+            mkdir -p "$FASTP_DIR"
             conda activate qassfilt_fastp
             fastp -i "$R1" -I "$R2" \
                   -o "$OUT1" -O "$OUT2" \
@@ -1371,6 +1372,7 @@ process_sample() {
         update_status "$SAMPLE" "SPADES" "SKIPPED"
         elif should_run_step "$SAMPLE" "SPADES" || [[ ! -s "${CONTIGS_BEFORE_DIR}/${SAMPLE}_before.fasta" ]]; then
             update_status "$SAMPLE" "SPADES" "RUNNING"
+            mkdir -p "$SPADES_DIR"
             conda activate qassfilt_spades
 
             # Use FASTP output if available
@@ -1390,6 +1392,7 @@ process_sample() {
 
             if [[ $SPADES_EXIT -eq 0 ]]; then
 			CONTIGS_BEFORE="${CONTIGS_BEFORE_DIR}/${SAMPLE}_before.fasta"
+            mkdir -p "$CONTIGS_BEFORE_DIR"
 			[[ -s "$SPADES_CONTIGS" ]] && cp "$SPADES_CONTIGS" "$CONTIGS_BEFORE"
 			update_status "$SAMPLE" "SPADES" "OK"
             else
@@ -1478,6 +1481,7 @@ process_sample() {
 			# Run FILTER if CONTIGS_BEFORE exists and step should run
 			if should_run_step "$SAMPLE" "FILTER" || [[ ! -s "$OUTFILTER" ]]; then
 				update_status "$SAMPLE" "FILTER" "RUNNING"
+                mkdir -p "$FILTERED_DIR"
 				conda activate qassfilt_seqkit
 
 				LOG_FILE="$LOG_DIR/${SAMPLE}_filter.log"
@@ -2003,8 +2007,8 @@ custom_data:
       headers:
         q20_rate: "Q20 Rate"
         q30_rate: "Q30 Rate"
-        read1_mean_length: "Read1 Mean Length"
-        read2_mean_length: "Read2 Mean Length"
+        total_reads: "Total Reads"
+        total_bases: "Total Bases"
         gc_content: "GC Content"
     data:
       - name: "before_filtering"
@@ -2012,9 +2016,9 @@ custom_data:
       - name: "before_filtering"
         path: "before_filtering/q30_rate"
       - name: "before_filtering"
-        path: "before_filtering/read1_mean_length"
+        path: "before_filtering/total_reads"
       - name: "before_filtering"
-        path: "before_filtering/read2_mean_length"
+        path: "before_filtering/total_bases"
       - name: "before_filtering"
         path: "before_filtering/gc_content"
       - name: "after_filtering"
@@ -2022,9 +2026,9 @@ custom_data:
       - name: "after_filtering"
         path: "after_filtering/q30_rate"
       - name: "after_filtering"
-        path: "after_filtering/read1_mean_length"
+        path: "after_filtering/total_reads"
       - name: "after_filtering"
-        path: "after_filtering/read2_mean_length"
+        path: "after_filtering/total_bases"
       - name: "after_filtering"
         path: "after_filtering/gc_content"
 EOF
@@ -2036,6 +2040,7 @@ EOF
             --force \
             --module fastp \
             >"$LOG_FILE" 2>&1
+        rm -rf "$FASTP_CONFIG"  # clean up config file
         RUN_ANY=1
     fi
 
