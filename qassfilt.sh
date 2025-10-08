@@ -105,10 +105,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --spades [STRING]               	Options/parameters to pass directly to SPAdes"
             echo "                             		e.g.: \"--isolate --careful --cov-cutoff auto, ...\""
             echo "  --abricate [STRING]             	Options/parameters to pass directly to abricate except --db (enables abricate step)"
-            echo "                             		e.g.: \"--minid 80, --mincov 80,...\""
+            echo "                             		e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80,...\""
             echo "  --abritamr [STRING]             	Options/parameters to pass directly to abritamr (enables abritamr step)"
-            echo "                             		e.g.: \"--species Escherichia, -j 16 ...\""
-
+            echo "                             		e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 16 ...\""
             echo "  --version, -v              		Check QAssfilt version"
             echo "  --help, -h                 		Show this help message and exit"
             echo ""
