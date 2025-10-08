@@ -75,12 +75,12 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --CHECKM2DB_PATH, -d [DIR]            Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)
   --KRAKEN2_DB_PATH, -kd [DIR]          Path to KRAKEN2 database directory (enables kraken2 step)
   --GTDBTK_DB_PATH, -gd [DIR]           Path to GTDBTK database directory (enables gtdbtk step)
-  --SPADES_THREADS, -st [INT]           Threads for spades (default: 32)
-  --FASTP_THREADS, -ft [INT]            Threads for fastp (default: 16)
-  --CHECKM2_THREADS, -ct [INT]          Threads for CheckM2 (default: 16)
-  --QUAST_THREADS, -qt [INT]            Threads for QUAST (default: 16)
-  --KRAKEN2_THREADS, -kt [INT]          Threads for KRAKEN2 (default: 16)
-  --GTDBTK_THREADS, -gt [INT]           Threads for GTDBTK (default: 16)
+  --SPADES_THREADS, -st [INT]           Threads for spades (default: 12)
+  --FASTP_THREADS, -ft [INT]            Threads for fastp (default: 8)
+  --CHECKM2_THREADS, -ct [INT]          Threads for CheckM2 (default: 8)
+  --QUAST_THREADS, -qt [INT]            Threads for QUAST (default: 8)
+  --KRAKEN2_THREADS, -kt [INT]          Threads for KRAKEN2 (default: 8)
+  --GTDBTK_THREADS, -gt [INT]           Threads for GTDBTK (default: 8)
   --QUAST_REFERENCE, -qr [FILE]         Path to reference sequence for QUAST (optional)
   --SEQKIT_MIN_COV, -mc [INT]           Minimum (≤) contig coverage to be filtered (default: 10)
   --SEQKIT_MIN_LENGTH, -ml [INT]        Minimum (≤) contig length to be filtered (default: 500)
@@ -96,7 +96,7 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --abricate [STRING]                   Options/parameters to pass directly to abricate except --db (enables abricate step)
                                         e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80,..."
   --abritamr [STRING]                   Options/parameters to pass directly to abritamr (enables abritamr step)
-                                        e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 16,..."
+                                        e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 8,..."
   --version, -v                         Check QAssfilt version
   --help, -h                            Show this help message and exit
 ```
