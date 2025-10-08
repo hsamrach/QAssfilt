@@ -202,6 +202,8 @@ output_dir/
 |
 └── pipeline_parameters.txt: Options and parameters used in pipeline.
 ```
+For fastp, quast, checkm2, kraken2, and gtdbtk, the output could be viewed in multiqc_reports.
+For abritamr and abricate, the output could be viewed in its directory.
 ## Options and Parameters
 ##### --CONTIGS, -cg
 Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. The pipeline will start from quast-b, checkm2-b, filter, quast-a, checkm2-a, and finally multiqc. (default: disable)
