@@ -364,7 +364,7 @@ check_envs_and_tools() {
         if [[ "$ENV" == "qassfilt_abricate" || "$ENV" == "qassfilt_abritamr" ]]; then
             # Special environments without Python
             if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
-                echo "[WARN] Environment '$ENV' not found. Creating $ENV (no Python)..."
+                echo "[WARN] Environment '$ENV' not found. Creating $ENV..."
                 conda create -y -n "$ENV" \
                     || { echo "❌ Failed to create env $ENV"; exit 1; }
             else
