@@ -262,6 +262,10 @@ QAssfilt uses the following dependency tools:
 - [QUAST](https://github.com/ablab/quast)
 - [CheckM2](https://github.com/chklovski/CheckM2)
 - [SeqKit](https://github.com/shenwei356/seqkit)
+- [Kraken2](https://github.com/DerrickWood/kraken2)
+- [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk)
+- [ABRitAMR](https://github.com/MDU-PHL/abritamr)
+- [ABRicate](https://github.com/tseemann/abricate)
 - [MultiQC](https://github.com/MultiQC/MultiQC)
 # Information
 ## License
