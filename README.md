@@ -96,7 +96,7 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --abricate [STRING]                   Options/parameters to pass directly to abricate except --db (enables abricate step)
                                         e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80,..."
   --abritamr [STRING]                   Options/parameters to pass directly to abritamr (enables abritamr step)
-                                        e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 16 ..."
+                                        e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 16,..."
   --version, -v                         Check QAssfilt version
   --help, -h                            Show this help message and exit
 ```
