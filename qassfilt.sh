@@ -20,7 +20,7 @@ SEQKIT_MIN_LENGTH=500
 SKIP_STEPS=()
 CONTIG_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.1
+VERSION_QAssfilt=1.2
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -648,17 +648,25 @@ check_envs_and_tools() {
 
                 kraken2)
                     kraken2_version="v2.1.6"
+                    WORKDIR="${CONDA_PREFIX:-$HOME}/build"
+                    mkdir -p "$WORKDIR"
+                    cd "$WORKDIR" || { echo "❌ Cannot enter $WORKDIR"; exit 1; }
+
                     [[ -d kraken2_dir ]] && rm -rf kraken2_dir
                     git clone https://github.com/DerrickWood/kraken2.git kraken2_dir
                     cd kraken2_dir || { echo "❌ Failed to enter kraken2_dir"; exit 1; }
+
                     git checkout "${kraken2_version}" || { echo "❌ Version ${kraken2_version} not found"; exit 1; }
                     ./install_kraken2.sh "$CONDA_PREFIX/share/kraken2" || { echo "❌ Kraken2 build failed"; exit 1; }
+
                     for exe in "$CONDA_PREFIX/share/kraken2/"*; do
                         ln -sf "$exe" "$BIN_PATH/$(basename "$exe")"
                     done
+
                     cd ..
                     rm -rf kraken2_dir
                     ;;
+
                 gtdbtk)
                     echo "[INFO] Installing GTDB-Tk and dependencies in $ENV..."
                 # Define versions
