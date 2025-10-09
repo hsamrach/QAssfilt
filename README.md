@@ -243,7 +243,9 @@ This option provides free access to the options and parameters of SPAdes (please
 qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
 ```
 ##### --contigs_remove, -cr
-This option is specifically used when you know which contig names are contaminated or belong to unwanted pathogens. To use it, you need to provide a tab-delimited file following the template below:
+This option is specifically used when you know which contig names are contaminated or belong to unwanted pathogens. The kraken2 output in our pipeline also provides (.output) file that you could see which contig was the unwanted pathogen.
+
+To use it, you need to provide a tab-delimited file following the template below:
 ```
 #column1<TAB>#column2
 /path/sample001.fasta<TAB>NODE_83_length_3835_cov_218.746408,NODE_76_length_8849_cov_249.766302,NODE_72_length_10578_cov_311.188649
