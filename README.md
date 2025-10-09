@@ -125,7 +125,7 @@ qassfilt_abricate
 qassfilt_multiqc
 ```
 ### 2. Manually created environments and tools (Highly recommended for user who have their preferred tool version)
-You can create 6 environments above (same environment name) and install the tool in each environment so that QAassfilt will scan for the environments and tools.
+You can create 10 environments above (same environment name) and install the tool in each environment so that QAassfilt will scan for the environments and tools.
 To verify whether the manually created works well or not, please run :
 ```
 qassfilt -ini
