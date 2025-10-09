@@ -211,6 +211,8 @@ Suppose you already have your assembled genome as contig files, but you would li
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
 ##### --KRAKEN2_DB_PATH, -kd | --GTDBTK_DB_PATH, -gd | --abricate | --abritamr
 By default, these tools were skipped. Once they are triggered, the workflow will include them.
+
+Users have to have Kraken2 and GTDB-TK database downloaded to their own path. Please see the manual instructions for each tool.
 ##### --SEQKIT_MIN_COV, -mc
 This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --CONTIGS, -cg, make sure your contig headers contain coverage information.
 For example:
