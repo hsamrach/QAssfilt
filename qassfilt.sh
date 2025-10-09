@@ -756,7 +756,7 @@ check_envs_and_tools() {
                         exit 1
                     fi
 
-                    echo "✅ All tools installed successfully."
+                    echo "✅ All dependency tools for GTDB-TK installed successfully."
                     ;;
                 *)
                     echo "❌ Unknown tool $TOOL"
