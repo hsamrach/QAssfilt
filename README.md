@@ -68,7 +68,7 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --INPUT_PATH, -i [DIR]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
   --CONTIGS, -cg                        Enable contig mode (flag option)
                                         This will scan for fasta (.fa .fasta .fas .fna) in INPUT_PATH
-  --OUTPUT_PATH, -o [DIR]               Path to output directory
+  --OUTPUT_PATH, -o [DIR]               Path to output directory (full path mandatory e.g. /srv/user/path or /home/user/path)
   --INPUT_DIR_DEPTH, -id [INT]          Define directories to be scanned for fastq file (default: 1)
                                         e.g.: -id 1 will scan for only file in INPUT_PATH directory
                                         e.g.: -id 2 will scan all file in INPUT_PATH subdirectories
