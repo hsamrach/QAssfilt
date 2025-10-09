@@ -763,7 +763,7 @@ check_envs_and_tools() {
                     exit 1
                     ;;
             esac
-            echo "✅ $TOOL already installed in $ENV."
+            echo "✅ $TOOL installed in $ENV."
         fi
 
         # CheckM2 DB only if qassfilt_checkm2 is active
