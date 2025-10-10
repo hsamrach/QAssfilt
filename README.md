@@ -47,10 +47,9 @@ Now you have your conda installed and activated via miniconda3.
 
 The installation above is for Linux OS only. If you are using others, please find it via this link: https://repo.anaconda.com/miniconda and choose the one which suit with you.
 ## QAssfilt installation
-Currently, QAssfilt isn't available on conda-forge, but you could install it via my channel:
+Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
-conda create -n qassfilt_env -c samrachhan11 qassfilt -y
-conda activate qassfilt_env
+conda create -n base -c samrachhan11 qassfilt -y
 qassfilt -h # to show help
 ```
 Otherwise, you could install QAssfilt through git clone also:
