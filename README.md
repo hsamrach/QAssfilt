@@ -279,3 +279,5 @@ QAssfilt is free for everyone, and released under [GPL (version 3)](https://gith
 Any comments and suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
 QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902), and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
+
+**Resourced by Bacteriology And Antibiotic Resistance Group, Medical Biology Laboratory, Institut Pasteur du Cambodge.**
