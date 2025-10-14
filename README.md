@@ -12,17 +12,17 @@ Initialization is needed after installing QAssfilt. Please see [Initialization](
 # Basicer
 qassfilt -i /path/input_dir -o /path/output_dir
 or
-qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database
+qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database
 
 # Advancer
-qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database -id 2 --fastp "-q 30 -u 30" --spades "--isolate"
+qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -id 2 --fastp "-q 30 -u 30" --spades "--isolate"
 
 # Users unsatisfied with the default options
-qassfilt -i /path/input_dir -o /path/output_dir -d /path/database/CheckM2_database -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -st 64 -ft 32 -ct 64 -qt 64 -mc 50 -ml 1000 --skip "FASTP"
+qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -st 64 -ft 32 -ct 64 -qt 64 -mc 50 -ml 1000 --skip "FASTP"
 ```
 # Installation
 ## Conda installation
-Before installing QAssfilt, you have to have conda installed in your terminal. If you are new to conda, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
+Before installing QAssfilt, you have to had conda installed in your terminal. If you are new to conda, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
@@ -63,52 +63,51 @@ qassfilt -h # to show help
 ```
 Usage: qassfilt -i ~/dir -o ~/dir [options]
 
-  --INITIAL, -ini                       Initiallize QAssfilt, including checking and installing environments and tools (obligated for the first time)
-  --INPUT_PATH, -i [DIR]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
-  --CONTIGS, -cg                        Enable contig mode (flag option)
-                                        This will scan for fasta (.fa .fasta .fas .fna) in INPUT_PATH
-  --OUTPUT_PATH, -o [DIR]               Path to output directory (full path mandatory e.g. /srv/user/path or /home/user/path)
-  --INPUT_DIR_DEPTH, -id [INT]          Define directories to be scanned for fastq file (default: 1)
-                                        e.g.: -id 1 will scan for only file in INPUT_PATH directory
-                                        e.g.: -id 2 will scan all file in INPUT_PATH subdirectories
-  --CHECKM2DB_PATH, -d [DIR]            Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)
-  --KRAKEN2_DB_PATH, -kd [DIR]          Path to KRAKEN2 database directory (enables kraken2 step)
-  --GTDBTK_DB_PATH, -gd [DIR]           Path to GTDBTK database directory (enables gtdbtk step)
-  --SPADES_THREADS, -st [INT]           Threads for spades (default: 12)
-  --FASTP_THREADS, -ft [INT]            Threads for fastp (default: 8)
-  --CHECKM2_THREADS, -ct [INT]          Threads for CheckM2 (default: 8)
-  --QUAST_THREADS, -qt [INT]            Threads for QUAST (default: 8)
-  --KRAKEN2_THREADS, -kt [INT]          Threads for KRAKEN2 (default: 8)
-  --GTDBTK_THREADS, -gt [INT]           Threads for GTDBTK (default: 8)
-  --QUAST_REFERENCE, -qr [FILE]         Path to reference sequence for QUAST (optional)
-  --SEQKIT_MIN_COV, -mc [INT]           Minimum (≤) contig coverage to be filtered (default: 10)
-  --SEQKIT_MIN_LENGTH, -ml [INT]        Minimum (≤) contig length to be filtered (default: 500)
-  --skip [LIST]                         Skip tool(s) you don't want to use in the pipeline (space-separated)
+  --initial, -ini                       Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)
+  --input_path, -i [dir]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
+  --contigs, -cg                        Enable contig mode (flag option)
+                                        This will scan for fasta (.fa .fasta .fas .fna) in input_path
+  --output_path, -o [dir]               Path to output directory
+  --input_dir_depth, -id [N]            Define directories to be scanned for fastq file (default: 1)
+                                        e.g.: -id 1 will scan for only files in input_path directory
+                                        e.g.: -id 2 will scan all files in input_path subdirectories
+  --checkm2_db_path, -cd [dir]          Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)
+  --kraken2_db_path, -kd [dir]          Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)
+  --gtdbtk_db_path, -gd [dir]           Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)
+  --spades_threads, -st [N]             Threads for spades (default: 16)
+  --fastp_threads, -ft [N]              Threads for fastp (default: 8)
+  --checkm2_threads, -ct [N]            Threads for CheckM2 (default: 8)
+  --quast_threads, -qt [N]              Threads for QUAST (default: 8)
+  --kraken2_threads, -kt [N]            Threads for KRAKEN2 (default: 8)
+  --gtdbtk_threads, -gt [N]             Threads for GTDBTK (default: 8)
+  --quast_reference, -qr [file]         Path to reference sequence for QUAST (optional)
+  --filter_min_cov, -mc [N]             Minimum (≤) contig coverage to be filtered (default: 10)
+  --filter_min_length, -ml [N]          Minimum (≤) contig length to be filtered (default: 500)
+  --skip [list]                         Skip tool(s) you don't want to use in the pipeline (space-separated)
                                         e.g.: --skip "FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a
-                                        "ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC"
-  --contigs_remove, -cr [FILE]          Path to file containing contigs to remove.
-                                        Create a tab file with the path to the fasta file at column 1 and the contig name at column 2(separated by a comma for multiple names).
-  --fastp [STRING]                      Options/parameters to pass directly to fastp
+                                        ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC"
+  --contigs_remove, -cr [file]          A tab-delimited file with path to fasta file (column1) and contig NODE (column2, separated by comma if multiple).
+  --fastp [string]                      Options/parameters to pass directly to fastp
                                         e.g.: "-q 30 -u 30 -e 15 -l 50 -5 -3, ..."
-  --spades [STRING]                     Options/parameters to pass directly to SPAdes
+  --spades [string]                     Options/parameters to pass directly to SPAdes
                                         e.g.: "--isolate --careful --cov-cutoff auto, ..."
-  --abricate [STRING]                   Options/parameters to pass directly to abricate except --db (enables abricate step)
-                                        e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80,..."
-  --abritamr [STRING]                   Options/parameters to pass directly to abritamr (enables abritamr step)
+  --abricate [string]                   Options/parameters to pass directly to abricate, except "--db" to enable abricate step (default: disable)
+                                        e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80, --threads 8,..."
+  --abritamr [string]                   Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)
                                         e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 8,..."
-  --version, -v                         Check QAssfilt version
+  --version, -v                         Show QAssfilt version and exit
   --help, -h                            Show this help message and exit
 ```
 ## Initialization
 After successfully installing QAssfilt, you will have two choices for initialization:
 ### 1. Automatically initialized
-You can use --INITIAL, -ini for automatic initialization by checking and installing tools and environments, and also download checkm2 database if the option --CHECKM2DB_PATH, -d is not use.
+You can use --initial, -ini for automatic initialization by checking and installing tools and environments, and also download checkm2 database if the option --checkm2_db_path, -cd is not use.
 ```
 qassfilt -ini
 ```
-In case you already have Checkm2 database. It will export your database for Checkm2 by using --CHECKM2DB_PATH, -d. (No Checkm2 database will be downloaded)
+In case you already have CheckM2 database. It will export your database for Checkm2 by using --checkm2_db_path, -cd. (No Checkm2 database will be downloaded)
 ```
-qassfilt -ini -d /PATH/databases/CheckM2_database
+qassfilt -ini -cd /PATH/databases/CheckM2_database
 ```
 Ten environments will be produced, and each tool will be installed in each of its environments.
 ```
@@ -131,12 +130,12 @@ qassfilt -ini
 ```
 or
 ```
-qassfilt -ini -d /PATH/databases/CheckM2_database
+qassfilt -ini -cd /PATH/databases/CheckM2_database
 ```
 QAssfilt will check the environment and calling version of each tool. If it is working okay, initialization is completed without installing any tool.
-## Input file format (--INPUT_PATH, -i [DIR])
+## Input file format (--input_path, -i [DIR])
 QAssfilt works only on Illumina paired-end reads, but all fastq file extensions, including gz format.
-The very nice thing from QAssfilt is that you need to give only the input directory, and then it will scan for each pair of fastq files. Suppose you have files in different subdirectories of the input directory. In that case, you can also use the option --INPUT_DIR_DEPTH, -id, so that it will scan each subdirectory based on the number of DEPTH you provided.
+The very nice thing from QAssfilt is that you need to give only the input directory, and then it will scan for each pair of fastq files. Suppose you have files in different subdirectories of the input directory. In that case, you can also use the option --input_dir_depth, -id, so that it will scan each subdirectory based on the number of depth you provided.
 For example:
 ```
 qassfilt -i /path/input_dir -id 2 -o /path/output-dir
@@ -152,7 +151,7 @@ input_dir/
     └── file3_2.fq.gz
 ```
 So it will pick up only the fastq files in input_dir and subdirectory1. To make it also pick up subdirectory2, you can use -id 3.
-## Output file and directory (--OUTPUT_PATH, -o [DIR])
+## Output file and directory (--output_path, -o [DIR])
 During and after running, QAssfilt will produce:
 ```
 output_dir/
@@ -202,18 +201,18 @@ output_dir/
 └── pipeline_parameters.txt: Options and parameters used in pipeline.
 ```
 For fastp, quast, checkm2, kraken2, and gtdbtk, the output could be viewed in multiqc_reports.
-For abritamr and abricate, the output could be viewed in its directory.
+For abritamr and abricate, the output could be viewed in their own directory.
 ## Options and Parameters
-##### --CONTIGS, -cg
-Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. The pipeline will start from quast-b, checkm2-b, filter, quast-a, checkm2-a, and finally multiqc. (default: disable)
-##### --CHECKM2DB_PATH, -d
+##### --contigs, -cg
+Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. (default: disable)
+##### --checkm2_db_path, -cd
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
-##### --KRAKEN2_DB_PATH, -kd | --GTDBTK_DB_PATH, -gd | --abricate | --abritamr
+##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
 By default, these tools were skipped. Once they are triggered, the workflow will include them.
 
-Users have to have Kraken2 and GTDB-TK database downloaded to their own path. Please see the manual instructions for each tool.
-##### --SEQKIT_MIN_COV, -mc
-This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --CONTIGS, -cg, make sure your contig headers contain coverage information.
+Users have to had Kraken2 and GTDB-TK database downloaded to their own path. Please see the manual instructions for each tool.
+##### --filter_min_cov, -mc
+This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --contig, -cg, make sure your contig headers contain coverage information.
 For example:
 ```
 NODE_1_length_12345_cov_37.8
@@ -223,7 +222,7 @@ contig001_depth_42.7
 NODE_2_length_23456_depth_88
 ```
 All headers contain 'cov' and 'depth', which can be used by this mechanism.
-##### --SEQKIT_MIN_LENGTH, -ml
+##### --filter_min_length, -ml
 This will only pick up the contigs that have length (bp) greater than the number you specify to generate filtered contig files. This mechanism can be applied to all types of contig files since it counts the length (bp) of each contig directly.
 ##### --skip
 This allows users to skip any step they want if they only need a specific step.
@@ -232,6 +231,11 @@ For example:
 qassfilt -i /path/input_dir -o /path/output_dir --skip "FASTP"
 ```
 This will skip the FASTP step and run SPAdes automatically by finding paired-end FASTQ files in the input directories.
+
+You can also skip the tool steps before and after, using either uppercase or lowercase letters.
+```
+qassfilt -i /path/input_dir -o /path/output_dir --skip "CHECKM2-b quast-a"
+```
 ##### --fastp
 This option provides free access to the options and parameters of fastp (please see the fastp instructions: https://github.com/OpenGene/fastp).
 For example:
