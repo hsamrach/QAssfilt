@@ -133,7 +133,7 @@ or
 qassfilt -ini -cd /PATH/databases/CheckM2_database
 ```
 QAssfilt will check the environment and calling version of each tool. If it is working okay, initialization is completed without installing any tool.
-## Input file format (--input_path, -i [DIR])
+## Input file format (--input_path, -i)
 QAssfilt works only on Illumina paired-end reads, but all fastq file extensions, including gz format.
 The very nice thing from QAssfilt is that you need to give only the input directory, and then it will scan for each pair of fastq files. Suppose you have files in different subdirectories of the input directory. In that case, you can also use the option --input_dir_depth, -id, so that it will scan each subdirectory based on the number of depth you provided.
 For example:
@@ -151,7 +151,7 @@ input_dir/
     └── file3_2.fq.gz
 ```
 So it will pick up only the fastq files in input_dir and subdirectory1. To make it also pick up subdirectory2, you can use -id 3.
-## Output file and directory (--output_path, -o [DIR])
+## Output file and directory (--output_path, -o)
 During and after running, QAssfilt will produce:
 ```
 output_dir/
