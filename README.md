@@ -57,7 +57,7 @@ Otherwise, you could install QAssfilt through git clone also:
 git clone https://github.com/hsamrach/QAssfilt.git
 cd QAssfilt
 chmod +x qassfilt.sh
-qassfilt -h # to show help
+./qassfilt -h # to show help
 ```
 # Usage
 ```
