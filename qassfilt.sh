@@ -8,7 +8,7 @@ set -euo pipefail
 INPUT_PATH=""
 OUTPUT_PATH=""
 INPUT_DIR_DEPTH=1
-SPADES_THREADS=12
+SPADES_THREADS=16
 FASTP_THREADS=8
 CHECKM2_THREADS=8
 QUAST_REFERENCE=""
@@ -20,7 +20,7 @@ SEQKIT_MIN_LENGTH=500
 SKIP_STEPS=()
 CONTIG_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.2
+VERSION_QAssfilt=1.2.3
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -44,23 +44,23 @@ START_TIME=$(date +%s)
 # =========================
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --INITIAL|-ini) INIT_MODE="1"; shift  ;;
-        --INPUT_PATH|-i) INPUT_PATH="$2"; shift 2 ;;
-        --CONTIGS|-cg) CONTIG_MODE="1"; shift  ;;
-        --OUTPUT_PATH|-o) OUTPUT_PATH="$2"; shift 2 ;;
-        --INPUT_DIR_DEPTH|-id) INPUT_DIR_DEPTH="$2"; shift 2 ;;
-        --CHECKM2DB_PATH|-d) CHECKM2DB_PATH="$2"; shift 2 ;;
-        --KRAKEN2_DB_PATH|-kd) KRAKEN2_DB_PATH="$2"; shift 2 ;;
-        --GTDBTK_DB_PATH|-gd) GTDBTK_DB_PATH="$2"; shift 2 ;;
-        --SPADES_THREADS|-st) SPADES_THREADS="$2"; shift 2 ;;
-        --FASTP_THREADS|-ft) FASTP_THREADS="$2"; shift 2 ;;
-        --CHECKM2_THREADS|-ct) CHECKM2_THREADS="$2"; shift 2 ;;
-        --QUAST_THREADS|-qt) QUAST_THREADS="$2"; shift 2 ;;
-        --KRAKEN2_THREADS|-kt) KRAKEN2_THREADS="$2"; shift 2 ;;
-        --GTDBTK_THREADS|-gt) GTDBTK_THREADS="$2"; shift 2 ;;
-        --QUAST_REFERENCE|-qr) QUAST_REFERENCE="$2"; shift 2 ;;
-        --SEQKIT_MIN_COV|-mc) SEQKIT_MIN_COV="$2"; shift 2 ;;
-        --SEQKIT_MIN_LENGTH|-ml) SEQKIT_MIN_LENGTH="$2"; shift 2 ;;
+        --initial|-ini) INIT_MODE="1"; shift  ;;
+        --input_path|-i) INPUT_PATH="$2"; shift 2 ;;
+        --contigs|-cg) CONTIG_MODE="1"; shift  ;;
+        --output_path|-o) OUTPUT_PATH="$2"; shift 2 ;;
+        --input_dir_depth|-id) INPUT_DIR_DEPTH="$2"; shift 2 ;;
+        --checkm2_db_path|-cd) CHECKM2DB_PATH="$2"; shift 2 ;;
+        --kraken2_db_path|-kd) KRAKEN2_DB_PATH="$2"; shift 2 ;;
+        --gtdbtk_db_path|-gd) GTDBTK_DB_PATH="$2"; shift 2 ;;
+        --spades_threads|-st) SPADES_THREADS="$2"; shift 2 ;;
+        --fastp_threads|-ft) FASTP_THREADS="$2"; shift 2 ;;
+        --checkm2_threads|-ct) CHECKM2_THREADS="$2"; shift 2 ;;
+        --quast_threads|-qt) QUAST_THREADS="$2"; shift 2 ;;
+        --kraken2_threads|-kt) KRAKEN2_THREADS="$2"; shift 2 ;;
+        --gtdbtk_threads|-gt) GTDBTK_THREADS="$2"; shift 2 ;;
+        --quast_reference|-qr) QUAST_REFERENCE="$2"; shift 2 ;;
+        --filter_min_cov|-mc) SEQKIT_MIN_COV="$2"; shift 2 ;;
+        --filter_min_length|-ml) SEQKIT_MIN_LENGTH="$2"; shift 2 ;;
         --skip) SKIP_STEPS="$2"; shift 2 ;;
         --fastp) FASTP_EXTRA_OPTS="$2"; shift 2 ;;
         --spades) SPADES_EXTRA_OPTS="$2"; shift 2 ;;
@@ -75,40 +75,39 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "Usage: qassfilt -i ~/dir -o ~/dir [options]"
             echo ""
-            echo "  --INITIAL, -ini            		Initiallize QAssfilt, including checking and installing environments and tools (obligated for the first time)"
-            echo "  --INPUT_PATH, -i [DIR]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
-            echo "  --CONTIGS, -cg            		Enable contig mode (flag option)"
-            echo "                             		This will scan for fasta (.fa .fasta .fas .fna) in INPUT_PATH"
-            echo "  --OUTPUT_PATH, -o [DIR]         	Path to output directory"
-            echo "  --INPUT_DIR_DEPTH, -id [INT]    	Define directories to be scanned for fastq file (default: $INPUT_DIR_DEPTH)"
-            echo "                             		e.g.: -id 1 will scan for only file in INPUT_PATH directory"
-            echo "                             		e.g.: -id 2 will scan all file in INPUT_PATH subdirectories"
-            echo "  --CHECKM2DB_PATH, -d [DIR]      	Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
-            echo "  --KRAKEN2_DB_PATH, -kd [DIR]      	Providing path to KRAKEN2 database directory to enables kraken2 step (default: disable)"
-            echo "  --GTDBTK_DB_PATH, -gd [DIR]      	Providing path to GTDBTK database directory to enables gtdbtk step (default: disable)"
-            echo "  --SPADES_THREADS, -st [INT]     	Threads for spades (default: $SPADES_THREADS)"
-            echo "  --FASTP_THREADS, -ft [INT]      	Threads for fastp (default: $FASTP_THREADS)"
-            echo "  --CHECKM2_THREADS, -ct [INT]    	Threads for CheckM2 (default: $CHECKM2_THREADS)"
-            echo "  --QUAST_THREADS, -qt [INT]      	Threads for QUAST (default: $QUAST_THREADS)"
-            echo "  --KRAKEN2_THREADS, -kt [INT]      	Threads for KRAKEN2 (default: $KRAKEN2_THREADS)"
-            echo "  --GTDBTK_THREADS, -gt [INT]      	Threads for GTDBTK (default: $GTDBTK_THREADS)"
-            echo "  --QUAST_REFERENCE, -qr [FILE]   	Path to reference sequence for QUAST (optional)"
-            echo "  --SEQKIT_MIN_COV, -mc [INT]     	Minimum (≤) contig coverage to be filtered (default: $SEQKIT_MIN_COV)"
-            echo "  --SEQKIT_MIN_LENGTH, -ml [INT]  	Minimum (≤) contig length to be filtered (default: $SEQKIT_MIN_LENGTH)"
-            echo "  --skip [LIST]                 	Skip tool(s) you don't want to use in the pipeline (space-separated)"
+            echo "  --initial, -ini            		Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)"
+            echo "  --input_path, -i [dir]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
+            echo "  --contigs, -cg            		Enable contig mode (flag option)"
+            echo "                             		This will scan for fasta (.fa .fasta .fas .fna) in input_path"
+            echo "  --output_path, -o [dir]         	Path to output directory"
+            echo "  --input_dir_depth, -id [N]    	Define directories to be scanned for fastq file (default: $INPUT_DIR_DEPTH)"
+            echo "                             		e.g.: -id 1 will scan for only files in input_path directory"
+            echo "                             		e.g.: -id 2 will scan all files in input_path subdirectories"
+            echo "  --checkm2_db_path, -cd [dir]      	Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
+            echo "  --kraken2_db_path, -kd [dir]      	Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)"
+            echo "  --gtdbtk_db_path, -gd [dir]      	Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)"
+            echo "  --spades_threads, -st [N]     	Threads for spades (default: $SPADES_THREADS)"
+            echo "  --fastp_threads, -ft [N]      	Threads for fastp (default: $FASTP_THREADS)"
+            echo "  --checkm2_threads, -ct [N]    	Threads for CheckM2 (default: $CHECKM2_THREADS)"
+            echo "  --quast_threads, -qt [N]      	Threads for QUAST (default: $QUAST_THREADS)"
+            echo "  --kraken2_threads, -kt [N]      	Threads for KRAKEN2 (default: $KRAKEN2_THREADS)"
+            echo "  --gtdbtk_threads, -gt [N]      	Threads for GTDBTK (default: $GTDBTK_THREADS)"
+            echo "  --quast_reference, -qr [file]   	Path to reference sequence for QUAST (optional)"
+            echo "  --filter_min_cov, -mc [N]     	Minimum (≤) contig coverage to be filtered (default: $SEQKIT_MIN_COV)"
+            echo "  --filter_min_length, -ml [N]  	Minimum (≤) contig length to be filtered (default: $SEQKIT_MIN_LENGTH)"
+            echo "  --skip [list]                 	Skip tool(s) you don't want to use in the pipeline (space-separated)"
             echo "                             		e.g.: --skip \"FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a"
-            echo "                             		\"ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC\""
-            echo "  --contigs_remove, -cr [FILE]   	Path to file containing contigs to remove."
-            echo "                             		Create a tab file with the path to the fasta file at column 1 and the contig name at column 2(separated by a comma for multiple names)."
-            echo "  --fastp [STRING]                	Options/parameters to pass directly to fastp"
+            echo "                             		ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC\""
+            echo "  --contigs_remove, -cr [file]   	A tab-delimited file with path to fasta file (column1) and contig NODE (column2, separated by comma if multiple)."
+            echo "  --fastp [string]                	Options/parameters to pass directly to fastp"
             echo "                             		e.g.: \"-q 30 -u 30 -e 15 -l 50 -5 -3, ...\""
-            echo "  --spades [STRING]               	Options/parameters to pass directly to SPAdes"
+            echo "  --spades [string]               	Options/parameters to pass directly to SPAdes"
             echo "                             		e.g.: \"--isolate --careful --cov-cutoff auto, ...\""
-            echo "  --abricate [STRING]             	Options/parameters to pass directly to abricate except \"--db\" to enables abricate step (default: disable)"
-            echo "                             		e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80,...\""
-            echo "  --abritamr [STRING]             	Options/parameters to pass directly to abritamr to enables abritamr step (default: disable)"
-            echo "                             		e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 16,...\""
-            echo "  --version, -v              		Check QAssfilt version"
+            echo "  --abricate [string]             	Options/parameters to pass directly to abricate, except \"--db\" to enable abricate step (default: disable)"
+            echo "                             		e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80, --threads 8,...\""
+            echo "  --abritamr [string]             	Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)"
+            echo "                             		e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 8,...\""
+            echo "  --version, -v              		Show QAssfilt version and exit"
             echo "  --help, -h                 		Show this help message and exit"
             echo ""
             exit 0 ;;
@@ -266,10 +265,34 @@ process_skips() {
 }
 
 mark_skipped_steps() {
-    # Only mark explicitly skipped steps
+    # ======================================
+    # 1. Mark explicitly skipped steps
+    # ======================================
     for step in "${SKIP_STEPS[@]}"; do
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "$step" "SKIPPED"
+        done
+    done
+
+    # ======================================
+    # 2. Handle module enable/disable
+    # ======================================
+    for TOOL in ABRITAMR ABRICATE KRAKEN2 GTDBTK; do
+        local MODE_VAR="${TOOL}_MODE"
+
+        for SAMPLE in "${SAMPLES[@]}"; do
+            for substep in b a; do
+                local STEP_NAME="${TOOL}-${substep}"
+                local CURRENT_STATUS=$(awk -v s="$SAMPLE" -v step="$STEP_NAME" '$1==s && $2==step {print $3}' "$STATUS_FILE")
+
+                if [[ "${!MODE_VAR:-0}" -eq 0 ]]; then
+                    # Tool disabled → mark SKIPPED
+                    update_status "$SAMPLE" "$STEP_NAME" "SKIPPED"
+                elif [[ "$CURRENT_STATUS" == "SKIPPED" ]]; then
+                    # Tool re-enabled → reset to pending
+                    update_status "$SAMPLE" "$STEP_NAME" "-"
+                fi
+            done
         done
     done
 }
@@ -359,22 +382,20 @@ check_envs_and_tools() {
         echo ""
         echo "Checking environment: $ENV (for steps: ${ENV_STEPS[$ENV]})"
 
-        # Special check for ABRicate environment
-        
-        if [[ "$ENV" == "qassfilt_abricate" || "$ENV" == "qassfilt_abritamr" ]]; then
             # Special environments without Python
-            if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
-                echo "[WARN] Environment '$ENV' not found. Creating $ENV..."
-                conda create -y -n "$ENV" \
-                    || { echo "❌ Failed to create env $ENV"; exit 1; }
+            if [[ "$ENV" == "qassfilt_abricate" || "$ENV" == "qassfilt_abritamr" || "$ENV" == "qassfilt_gtdbtk" || "$ENV" == "qassfilt_kraken2" ]]; then
+                if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
+                    echo "[WARN] Environment '$ENV' not found. Creating $ENV..."
+                    conda create -y -n "$ENV" \
+                        || { echo "❌ Failed to create env $ENV"; exit 1; }
+                else
+                    echo "✅ Environment '$ENV' exists."
+                fi
             else
-                echo "✅ Environment '$ENV' exists."
-            fi
-        else
             # Regular environment creation (includes Python)
             if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
                 echo "[WARN] Environment '$ENV' not found. Creating..."
-                conda create -y -n "$ENV" python=3.10 \
+                conda create -y -n "$ENV" python=3.12 \
                     || { echo "❌ Failed to create env $ENV"; exit 1; }
             else
                 echo "✅ Environment '$ENV' exists."
@@ -556,15 +577,15 @@ check_envs_and_tools() {
 
                 checkm2)
                     checkm2_version="1.1.0"
-                    [[ -d checkm2 ]] && rm -rf checkm2
-                    git clone --recursive https://github.com/chklovski/checkm2.git
-                    cd checkm2 || { echo "❌ Failed to enter checkm2 folder"; exit 1; }
-                    git checkout "${checkm2_version}" || { echo "❌ Version ${checkm2_version} not found"; exit 1; }
-                    git submodule update --init --recursive
-                    conda env update -n "$ENV" -f checkm2.yml --prune
-                    python setup.py install || { echo "❌ CheckM2 installation failed"; exit 1; }
-                    cd ..
-                    rm -rf checkm2
+
+                    echo "[INFO] Installing CheckM2 v${checkm2_version} in $ENV..."
+
+                    # Activate the environment
+                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+
+                    conda install -y -n "$ENV" -c conda-forge -c bioconda checkm2=${checkm2_version}
+
+                    conda deactivate
                     ;;
 
                 seqkit)
@@ -622,8 +643,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    # Install Perl and required dependencies via Conda
-                    conda install -y -n "$ENV" abritamr=${abritamr_version}
+                    conda install -y -n "$ENV" -c conda-forge -c bioconda abritamr=${abritamr_version}
 
                     conda deactivate
                     ;;
@@ -635,8 +655,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    # Install Perl and required dependencies via Conda
-                    conda install -y -n "$ENV" -c bioconda abricate=${abricate_version}
+                    conda install -y -n "$ENV" -c bioconda -c conda-forge abricate=${abricate_version}
 
                     conda deactivate
                     ;;
@@ -647,120 +666,27 @@ check_envs_and_tools() {
                     ;;
 
                 kraken2)
-                    kraken2_version="v2.1.6"
-                    WORKDIR="${CONDA_PREFIX:-$HOME}/build"
-                    mkdir -p "$WORKDIR"
-                    cd "$WORKDIR" || { echo "❌ Cannot enter $WORKDIR"; exit 1; }
+                    kraken2_version="2.1.6"
+                    echo "[INFO] Installing Kraken2 v${kraken2_version} in $ENV..."
 
-                    [[ -d kraken2_dir ]] && rm -rf kraken2_dir
-                    git clone https://github.com/DerrickWood/kraken2.git kraken2_dir
-                    cd kraken2_dir || { echo "❌ Failed to enter kraken2_dir"; exit 1; }
+                    # Activate the environment
+                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    git checkout "${kraken2_version}" || { echo "❌ Version ${kraken2_version} not found"; exit 1; }
-                    ./install_kraken2.sh "$CONDA_PREFIX/share/kraken2" || { echo "❌ Kraken2 build failed"; exit 1; }
+                    conda install -y -n "$ENV" -c conda-forge -c bioconda kraken2=${kraken2_version}
 
-                    for exe in "$CONDA_PREFIX/share/kraken2/"*; do
-                        ln -sf "$exe" "$BIN_PATH/$(basename "$exe")"
-                    done
-
-                    cd ..
-                    rm -rf kraken2_dir
+                    conda deactivate
                     ;;
 
                 gtdbtk)
-                    echo "[INFO] Installing GTDB-Tk and dependencies in $ENV..."
-                # Define versions
                     gtdbtk_version="2.5.2"
-                    prodigal_version="2.6.3"
-                    hmmer_version="3.4"
-                    pplacer_version="1.1.alpha20"
-                    skani_version="0.3.0"
-                    fasttree_version="2.2.0"
-                    mash_version="2.3"
+                    echo "[INFO] Installing GTDB-Tk v${gtdbtk_version} in $ENV..."
 
-                    # Check if inside a Conda environment
-                    if [ -z "$CONDA_PREFIX" ]; then
-                        echo "❌ No active Conda environment detected. Please activate your GTDB-Tk environment first."
-                        exit 1
-                    fi
+                    # Activate the environment
+                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    # Activate the Conda environment
-                    conda activate qassfilt_gtdbtk
+                    conda install -y -n "$ENV" -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11
 
-                    # Step 1: Install GTDB-Tk via pip
-                    echo "⚙️ Installing GTDB-Tk v${gtdbtk_version}..."
-                    python -m pip install "gtdbtk==${gtdbtk_version}" || { echo "❌ Failed to install GTDB-Tk"; exit 1; }
-
-                    # Step 2: Install Prodigal from source
-                    echo "⚙️ Installing Prodigal v${prodigal_version}..."
-                    PRODIGAL_URL="https://github.com/hyattpd/Prodigal/archive/refs/tags/v${prodigal_version}.tar.gz"
-                    TMP_DIR=$(mktemp -d)
-                    cd "$TMP_DIR" || { echo "❌ Failed to create temp directory"; exit 1; }
-                    wget -q "$PRODIGAL_URL" -O prodigal.tar.gz || { echo "❌ Failed to download Prodigal"; exit 1; }
-                    tar -xzf prodigal.tar.gz
-                    cd "Prodigal-${prodigal_version}" || { echo "❌ Prodigal source directory missing"; exit 1; }
-                    make clean >/dev/null 2>&1
-                    make >/dev/null 2>&1
-                    make install INSTALLDIR="${CONDA_PREFIX}/bin" || { echo "❌ Failed to install Prodigal"; exit 1; }
-                    cd - >/dev/null
-                    rm -rf "$TMP_DIR"
-
-                    # Step 3: Install HMMER via Conda
-                    echo "⚙️ Installing HMMER v${hmmer_version}..."
-                    conda install -y -c bioconda hmmer=="${hmmer_version}" || { echo "❌ Failed to install HMMER"; exit 1; }
-
-                    # Step 4: Install pplacer via Conda
-                    echo "⚙️ Installing pplacer v${pplacer_version}..."
-                    conda install -y -c bioconda pplacer=="${pplacer_version}" || { echo "❌ Failed to install pplacer"; exit 1; }
-
-                    # Step 5: Install skani via Conda
-                    echo "⚙️ Installing skani v${skani_version}..."
-                    conda install -y -c bioconda skani=="${skani_version}" || { echo "❌ Failed to install skani"; exit 1; }
-
-                    # Step 6: Install FastTree via Conda
-                    echo "⚙️ Installing FastTree v${fasttree_version}..."
-                    conda install -y -c bioconda fasttree=="${fasttree_version}" || { echo "❌ Failed to install FastTree"; exit 1; }
-
-                    # Step 7: Install Mash via Conda
-                    echo "⚙️ Installing Mash v${mash_version}..."
-                    conda install -y -c bioconda mash=="${mash_version}" || { echo "❌ Failed to install Mash"; exit 1; }
-
-                    # Step 8: Verify installations
-                    echo "⚙️ Verifying installations..."
-                    if ! gtdbtk --version &>/dev/null; then
-                        echo "❌ GTDB-Tk installation failed."
-                        exit 1
-                    fi
-                    if ! command -v prodigal &>/dev/null; then
-                        echo "❌ Prodigal installation failed or not found in PATH."
-                        exit 1
-                    fi
-                    if ! command -v hmmsearch &>/dev/null; then
-                        echo "❌ HMMER installation failed or not found in PATH."
-                        exit 1
-                    fi
-                    if ! command -v pplacer &>/dev/null; then
-                        echo "❌ pplacer installation failed or not found in PATH."
-                        exit 1
-                    fi
-                    if ! command -v skani &>/dev/null; then
-                        echo "❌ skani installation failed or not found in PATH."
-                        exit 1
-                    fi
-                    if ! command -v FastTree &>/dev/null; then
-                        echo "❌ FastTree installation failed or not found in PATH."
-                        exit 1
-                    fi
-                    if ! command -v mash &>/dev/null; then
-                        echo "❌ Mash installation failed or not found in PATH."
-                        exit 1
-                    fi
-
-                    echo "✅ All dependency tools for GTDB-TK installed successfully."
-                    ;;
-                *)
-                    echo "❌ Unknown tool $TOOL"
-                    exit 1
+                    conda deactivate
                     ;;
             esac
             echo "✅ $TOOL installed in $ENV."
@@ -922,7 +848,7 @@ fi
 # =========================
 print_intro() {
     echo "You have specified the following options:"
-    echo "    INPUT_PATH          = $INPUT_PATH"
+    echo "    INPUT_PATH          = $(realpath -m "$INPUT_PATH")"
     echo "    CONTIG_MODE         = ${CONTIG_MODE_DISPLAY}"
     echo -n "    KRAKEN2_MODE        = $KRAKEN2_MODE_DISPLAY"
     [[ -n "$KRAKEN2_DB_PATH" ]] && echo -n " (DB: $KRAKEN2_DB_PATH)"
@@ -942,7 +868,7 @@ print_intro() {
 
     echo "    INPUT_DIR_DEPTH     = $INPUT_DIR_DEPTH"
     echo "    CHECKM2DB_PATH      = $CHECKM2DB_PATH"
-    echo "    OUTPUT_PATH         = $OUTPUT_PATH"
+    echo "    OUTPUT_PATH         = $(realpath -m "$OUTPUT_PATH")"
     echo "    SPADES_THREADS      = $SPADES_THREADS"
     echo "    FASTP_THREADS       = $FASTP_THREADS"
     echo "    CHECKM2_THREADS     = $CHECKM2_THREADS"
@@ -1013,7 +939,7 @@ update_status() {
                 "$STATUS_FILE" > "${STATUS_FILE}.tmp" && mv "${STATUS_FILE}.tmp" "$STATUS_FILE"
         else
             # Initialize new row with blanks
-            ROW=("-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-")
+            ROW=("-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-" "-")
             ROW[$((COL-1))]="$STATUS"
             echo -e "$SAMPLE\t$(IFS=$'\t'; echo "${ROW[*]}")" >> "$STATUS_FILE"
         fi
@@ -1057,49 +983,25 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
 	echo -e "QAssfilt Pipeline Progressing..."  # Print the static part
 	echo -e "------------------------------------------------"
 	echo -e "Options specified"
-	echo -e ""
-    echo -e "  INPUT_PATH        : $INPUT_PATH"
+    echo -e "  INPUT_PATH        : $(realpath -m "$INPUT_PATH")"
     echo -e "  INPUT_DIR_DEPTH   : ${CYAN}$INPUT_DIR_DEPTH${RESET}"
-    echo -e "  OUTPUT_PATH       : $OUTPUT_PATH"
+    echo -e "  OUTPUT_PATH       : $(realpath -m "$OUTPUT_PATH")"
     echo -e "  CHECKM2DB_PATH    : $CHECKM2DB_PATH"
     echo -e "  CONTIG_MODE       : $CONTIG_MODE_DISPLAY"
     echo -n "  KRAKEN2_MODE      : $KRAKEN2_MODE_DISPLAY"
-    if [[ "$KRAKEN2_MODE" -ne 1 ]]; then
-        update_status "$SAMPLE" "KRAKEN2-b" "SKIPPED"
-        update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
-    else
-        [[ -n "$KRAKEN2_DB_PATH" ]] && echo -n " (DB: $KRAKEN2_DB_PATH)"
-    fi
+    [[ -n "$KRAKEN2_DB_PATH" ]] && echo -n " (DB: $KRAKEN2_DB_PATH)"
     echo
 
-    # GTDBTK
     echo -n "  GTDBTK_MODE       : $GTDBTK_MODE_DISPLAY"
-    if [[ "$GTDBTK_MODE" -ne 1 ]]; then
-        update_status "$SAMPLE" "GTDBTK-b" "SKIPPED"
-        update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
-    else
-        [[ -n "$GTDBTK_DB_PATH" ]] && echo -n " (DB: $GTDBTK_DB_PATH)"
-    fi
+    [[ -n "$GTDBTK_DB_PATH" ]] && echo -n " (DB: $GTDBTK_DB_PATH)"
     echo
 
-    # ABRITAMR
     echo -n "  ABRITAMR_MODE     : $ABRITAMR_MODE_DISPLAY"
-    if [[ "$ABRITAMR_MODE" -ne 1 ]]; then
-        update_status "$SAMPLE" "ABRITAMR-b" "SKIPPED"
-        update_status "$SAMPLE" "ABRITAMR-a" "SKIPPED"
-    else
-        [[ -n "$ABRITAMR_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRITAMR_EXTRA_OPTS)"
-    fi
+    [[ -n "$ABRITAMR_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRITAMR_EXTRA_OPTS)"
     echo
 
-    # ABRICATE
     echo -n "  ABRICATE_MODE     : $ABRICATE_MODE_DISPLAY"
-    if [[ "$ABRICATE_MODE" -ne 1 ]]; then
-        update_status "$SAMPLE" "ABRICATE-b" "SKIPPED"
-        update_status "$SAMPLE" "ABRICATE-a" "SKIPPED"
-    else
-        [[ -n "$ABRICATE_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRICATE_EXTRA_OPTS)"
-    fi
+    [[ -n "$ABRICATE_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRICATE_EXTRA_OPTS)"
     echo
     echo -e "  SPADES_THREADS    : ${CYAN}$SPADES_THREADS${RESET}"
     echo -e "  FASTP_THREADS     : ${CYAN}$FASTP_THREADS${RESET}"
@@ -1113,11 +1015,9 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
     echo -e "  SKIP_STEPS        : ${SKIP_STEPS[*]}"
     echo -e "  FASTP_EXTRA_OPTS  : ${CYAN}$FASTP_EXTRA_OPTS${RESET}"
     echo -e "  SPADES_EXTRA_OPTS : ${CYAN}$SPADES_EXTRA_OPTS${RESET}"
-    echo -e "------------------------------------------------"
-	echo -e "QAssfilt sample list : ${OUTPUT_PATH}/pipeline_status.tsv"
-	echo -e ""
-	echo -e "QAssfilt detail logs : ${OUTPUT_PATH}/logs"
-    echo -e ""
+	echo -e "  Sample list       : $(realpath -m "$OUTPUT_PATH")/pipeline_status.tsv"
+	echo -e "  Detail logs       : $(realpath -m "$OUTPUT_PATH")/logs"
+    echo -e "================================================"
 	    if [[ -f "$STATUS_FILE" ]]; then
     TOTAL=$(($(wc -l < "$STATUS_FILE") - 1))
     RUNNED=$(awk '
@@ -1129,31 +1029,33 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
                 }
             }
         }' "$STATUS_FILE" | sort -u | wc -l)
-
-    echo -e "Samples processed: ${CYAN}${RUNNED}${RESET}/${CYAN}${TOTAL}${RESET}"
-    echo -e "------------------------------------------------"
+    echo -e "           >>> PROCESSING STATUS <<<"
+    echo -e "================================================"
+    echo -e "  Samples processed : ${CYAN}${RUNNED}${RESET}/${CYAN}${TOTAL}${RESET}"
 fi
-    # Print column header (pinned)
-    HEADER_FORMAT="%-16s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s %-10s\n"
-    head -1 "$STATUS_FILE" | awk -v fmt="$HEADER_FORMAT" 'BEGIN{FS=OFS="\t"} {printf fmt,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17}'
-    echo -e ""
-
     # -------------------------
-    # Only print the current sample row
+    # Print current sample vertically
     # -------------------------
     grep "^$SAMPLE" "$STATUS_FILE" | while IFS=$'\t' read -r sample fastp spades quastb checkm2b filter quasta checkm2a kraken2b kraken2a gtdbtkb gtdbtka abritamrb abritamra abricateb abricatea multiqc; do
-        for var in fastp spades quastb checkm2b filter quasta checkm2a kraken2b kraken2a gtdbtkb gtdbtka abritamrb abritamra abricateb abricatea multiqc; do
-            case "${!var}" in
-                RUNNING) eval "$var=\"RUNNING\"" ;;
-                OK)      eval "$var=\"OK\"" ;;
-                FAIL)    eval "$var=\"FAIL\"" ;;
-                SKIPPED) eval "$var=\"SKIPPED\"" ;;
-                *)       eval "$var=\"-\"" ;;
-            esac
-        done
-
-        printf "$HEADER_FORMAT" \
-            "$sample" "$fastp" "$spades" "$quastb" "$checkm2b" "$filter" "$quasta" "$checkm2a" "$kraken2b" "$kraken2a" "$gtdbtkb" "$gtdbtka" "$abritamrb" "$abritamra" "$abricateb" "$abricatea" "$multiqc"
+          echo -e "  Sample analyzing  : ${CYAN}${sample}${RESET}"
+          echo -e ""
+          printf "%-19s : %s\n" "  FASTP" "$fastp"
+          printf "%-19s : %s\n" "  SPADES" "$spades"
+          printf "%-19s : %s\n" "  QUAST-b" "$quastb"
+          printf "%-19s : %s\n" "  CHECKM2-b" "$checkm2b"
+          printf "%-19s : %s\n" "  FILTER" "$filter"
+          printf "%-19s : %s\n" "  QUAST-a" "$quasta"
+          printf "%-19s : %s\n" "  CHECKM2-a" "$checkm2a"
+          printf "%-19s : %s\n" "  KRAKEN2-b" "$kraken2b"
+          printf "%-19s : %s\n" "  KRAKEN2-a" "$kraken2a"
+          printf "%-19s : %s\n" "  GTDBTK-b" "$gtdbtkb"
+          printf "%-19s : %s\n" "  GTDBTK-a" "$gtdbtka"
+          printf "%-19s : %s\n" "  ABRITAMR-b" "$abritamrb"
+          printf "%-19s : %s\n" "  ABRITAMR-a" "$abritamra"
+          printf "%-19s : %s\n" "  ABRICATE-b" "$abricateb"
+          printf "%-19s : %s\n" "  ABRICATE-a" "$abricatea"
+          printf "%-19s : %s\n" "  MULTIQC" "$multiqc"
+          echo -e "------------------------------------------------"
     done
 fi
 }
@@ -1196,10 +1098,17 @@ should_run_step() {
     local SAMPLE=$1
     local STEP=$2
 
-    # If user explicitly requested skip -> mark ALL samples skipped for this step
+    # Check if the step is skipped
     if is_skipped "$STEP"; then
+        # Step explicitly skipped by user → mark SKIPPED
         update_status "$SAMPLE" "$STEP" "SKIPPED"
-        return 1
+        return 1  # do not run
+    else
+        # Step is not in SKIP_STEPS → if currently marked SKIPPED, reset to pending
+        current_status=$(get_status "$SAMPLE" "$STEP")
+        if [[ "$current_status" == "SKIPPED" ]]; then
+            update_status "$SAMPLE" "$STEP" "-"
+        fi
     fi
 
     # Otherwise, follow normal pipeline order
@@ -1262,11 +1171,23 @@ fi
 # APPLY SKIPS
 # =========================
 process_skips   # <- normalize skip list
+
 for SAMPLE in "${SAMPLES[@]}"; do
-    for STEP in FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC; do
+    for STEP in FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a \
+                KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a ABRITAMR-b ABRITAMR-a \
+                ABRICATE-b ABRICATE-a MULTIQC; do
+
         if is_skipped "$STEP"; then
+            # Step explicitly skipped → mark SKIPPED
             update_status "$SAMPLE" "$STEP" "SKIPPED"
+        else
+            # Step not in SKIP_STEPS → if currently SKIPPED, reset to pending (-)
+            current_status=$(get_status "$SAMPLE" "$STEP")
+            if [[ "$current_status" == "SKIPPED" ]]; then
+                update_status "$SAMPLE" "$STEP" "-"
+            fi
         fi
+
     done
 done
 
@@ -1703,7 +1624,7 @@ process_sample() {
                     update_status "$SAMPLE" "GTDBTK-b" "SKIPPED"
                 done
             elif [[ -s "$CONTIGS_BEFORE" ]]; then
-            if should_run_step "$SAMPLE" "GTDBTK-b" || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/gtdbtk.bac120.summary.tsv" ]]; then
+            if should_run_step "$SAMPLE" "GTDBTK-b" || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.classify.tree.1.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.backbone.bac120.classify.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.summary.tsv" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.tree.mapping.tsv" ]]; then
                 update_status "$SAMPLE" "GTDBTK-b" "RUNNING"
                 conda activate qassfilt_gtdbtk >/dev/null 2>&1 || true
                 gtdbtk classify_wf \
@@ -1711,6 +1632,9 @@ process_sample() {
                 --out_dir "$GTDBTK_BEFORE_DIR" \
                 --cpus "$GTDBTK_THREADS" \
                 --extension fasta \
+                --force \
+                --skip_ani_screen \
+                --prefix before \
                 >>"$GTDBTKLOG" 2>&1
                     # Update GTDBTK-b status for all samples based on last command exit
                     if [[ $? -eq 0 ]]; then
@@ -1741,7 +1665,7 @@ process_sample() {
                     update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
                 done
             elif [[ -s "$OUTFILTER" ]]; then
-            if should_run_step "$SAMPLE" "GTDBTK-a" || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/gtdbtk.bac120.summary.tsv" ]]; then
+            if should_run_step "$SAMPLE" "GTDBTK-a" || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.classify.tree.1.tree" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.backbone.bac120.classify.tree" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.summary.tsv" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.tree.mapping.tsv" ]]; then
                 update_status "$SAMPLE" "GTDBTK-a" "RUNNING"
                 conda activate qassfilt_gtdbtk >/dev/null 2>&1 || true
                 gtdbtk classify_wf \
@@ -1749,6 +1673,9 @@ process_sample() {
                 --out_dir "$GTDBTK_AFTER_DIR" \
                 --cpus "$GTDBTK_THREADS" \
                 --extension fasta \
+                --force \
+                --skip_ani_screen \
+                --prefix after \
                 >>"$GTDBTKLOG" 2>&1
                     # Update GTDBTK-a status for all samples based on last command exit
                     if [[ $? -eq 0 ]]; then
@@ -1777,7 +1704,9 @@ process_sample() {
 # 10. ABRITAMR
 # =========================
 if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
+    OUTPUT_PATH="$(realpath -m "$OUTPUT_PATH")"
     ABRITAMRLOG="${OUTPUT_PATH}/logs/abritamr.log"
+    mkdir -p "$(dirname "$ABRITAMRLOG")"
     mkdir -p "${OUTPUT_PATH}/abritamr/"
 
     # --- Run on CONTIGS_BEFORE ---
@@ -2126,7 +2055,6 @@ echo ""
 echo "----------------------------------------------------------"
 echo "               QAssfilt Pipeline completed!"
 echo ""
-printf "%-18s : %s\n" "Path to QAssfilt output"              "${OUTPUT_PATH}"
+printf "%-18s : %s\n" "Please find the output here"              "$(realpath -m "$OUTPUT_PATH")"
 echo ""
 echo "All rights reserved. © 2025 QAssfilt, Samrach Han"
-echo "----------------------------------------------------------"
