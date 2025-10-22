@@ -5,7 +5,7 @@ QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built without using containers, starting from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis (credited to [bohra](https://github.com/MDU-PHL/bohra)). Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer.
 # QAssfilt workflow
-![Logo](QAssfilt_workflow.jpg)
+![Logo](QAssfilt_workflow_v2.jpg)
 # Quick guide
 Initialization is needed after installing QAssfilt. Please see [Initialization](https://github.com/hsamrach/QAssfilt#initialization) section.
 ```
