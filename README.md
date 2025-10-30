@@ -50,7 +50,7 @@ The installation above is for Linux OS only. If you are using others, please fin
 ## QAssfilt installation
 Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
-conda create -n base -c samrachhan11 qassfilt -y
+conda install -n base -c samrachhan11 qassfilt -y
 qassfilt -h # to show help
 ```
 Otherwise, you could install QAssfilt through git clone also:
