@@ -145,11 +145,11 @@ input_dir/
 ├── file1_R1.fastq.gz
 ├── file1_R2.fastq.gz
 └── subdirectory1/
-│   ├── file2_1.fastq
-│   └── file2_2.fastq
-└── subdirectory2/
-    ├── file3_1.fq.gz
-    └── file3_2.fq.gz
+    ├── file2_1.fastq
+    └── file2_2.fastq
+    └──subdirectory2/
+       ├── file3_1.fq.gz
+       └── file3_2.fq.gz
 ```
 So it will pick up only the fastq files in input_dir and subdirectory1. To make it also pick up subdirectory2, you can use -id 3.
 ## Output file and directory (--output_path, -o)
