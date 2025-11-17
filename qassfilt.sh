@@ -1,13 +1,31 @@
 #!/usr/bin/env bash
-source ~/miniconda3/etc/profile.d/conda.sh
-set -euo pipefail
+
 #All rights reserved. © 2025 QAssfilt, Samrach Han
+
+# List all possible conda installation paths
+for d in "$HOME"/miniconda* "$HOME"/anaconda* "$HOME"/mambaforge "$HOME"/miniforge*; do
+    if [ -f "$d/etc/profile.d/conda.sh" ]; then
+        source "$d/etc/profile.d/conda.sh"
+        found=1
+        break
+    fi
+done
+
+# If nothing was found
+if [ -z "$found" ]; then
+    echo "⚠️  Could not find conda.sh — please check your Conda installation."
+    exit 1
+fi
+
+set -eo pipefail
+
 # =========================
 # CONFIGURATION WITH DEFAULTS
 # =========================
 INPUT_PATH=""
 OUTPUT_PATH=""
 INPUT_DIR_DEPTH=1
+COMPETITIVE_THREADS=8
 SPADES_THREADS=16
 FASTP_THREADS=8
 CHECKM2_THREADS=8
@@ -19,8 +37,9 @@ SEQKIT_MIN_COV=10
 SEQKIT_MIN_LENGTH=500
 SKIP_STEPS=()
 CONTIG_MODE=0
+COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.3
+VERSION_QAssfilt=1.2.4
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -47,11 +66,13 @@ while [[ $# -gt 0 ]]; do
         --initial|-ini) INIT_MODE="1"; shift  ;;
         --input_path|-i) INPUT_PATH="$2"; shift 2 ;;
         --contigs|-cg) CONTIG_MODE="1"; shift  ;;
+        --competitive|-cp) COMPETITIVE_MODE="1"; shift ;;
         --output_path|-o) OUTPUT_PATH="$2"; shift 2 ;;
         --input_dir_depth|-id) INPUT_DIR_DEPTH="$2"; shift 2 ;;
         --checkm2_db_path|-cd) CHECKM2DB_PATH="$2"; shift 2 ;;
         --kraken2_db_path|-kd) KRAKEN2_DB_PATH="$2"; shift 2 ;;
         --gtdbtk_db_path|-gd) GTDBTK_DB_PATH="$2"; shift 2 ;;
+        --competitive_threads|-cpt) COMPETITIVE_THREADS="$2"; shift 2 ;;
         --spades_threads|-st) SPADES_THREADS="$2"; shift 2 ;;
         --fastp_threads|-ft) FASTP_THREADS="$2"; shift 2 ;;
         --checkm2_threads|-ct) CHECKM2_THREADS="$2"; shift 2 ;;
@@ -79,6 +100,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --input_path, -i [dir]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
             echo "  --contigs, -cg            		Enable contig mode (flag option)"
             echo "                             		This will scan for fasta (.fa .fasta .fas .fna) in input_path"
+            echo "  --competitive, -cp           		Enable competitive mode (flag option)"
             echo "  --output_path, -o [dir]         	Path to output directory"
             echo "  --input_dir_depth, -id [N]    	Define directories to be scanned for fastq file (default: $INPUT_DIR_DEPTH)"
             echo "                             		e.g.: -id 1 will scan for only files in input_path directory"
@@ -86,6 +108,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --checkm2_db_path, -cd [dir]      	Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
             echo "  --kraken2_db_path, -kd [dir]      	Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)"
             echo "  --gtdbtk_db_path, -gd [dir]      	Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)"
+            echo "  --competitive_threads, -cpt [N]  	Number of threads for competitive mode (default: $COMPETITIVE_THREADS)"
             echo "  --spades_threads, -st [N]     	Threads for spades (default: $SPADES_THREADS)"
             echo "  --fastp_threads, -ft [N]      	Threads for fastp (default: $FASTP_THREADS)"
             echo "  --checkm2_threads, -ct [N]    	Threads for CheckM2 (default: $CHECKM2_THREADS)"
@@ -583,7 +606,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    conda install -y -n "$ENV" -c conda-forge -c bioconda checkm2=${checkm2_version}
+                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda checkm2=${checkm2_version}
 
                     conda deactivate
                     ;;
@@ -643,7 +666,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    conda install -y -n "$ENV" -c conda-forge -c bioconda abritamr=${abritamr_version}
+                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda abritamr=${abritamr_version}
 
                     conda deactivate
                     ;;
@@ -655,7 +678,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    conda install -y -n "$ENV" -c bioconda -c conda-forge abricate=${abricate_version}
+                    conda install -y -n "$ENV" -c defaults -c bioconda -c conda-forge abricate=${abricate_version}
 
                     conda deactivate
                     ;;
@@ -672,7 +695,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    conda install -y -n "$ENV" -c conda-forge -c bioconda kraken2=${kraken2_version}
+                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda kraken2=${kraken2_version}
 
                     conda deactivate
                     ;;
@@ -684,7 +707,7 @@ check_envs_and_tools() {
                     # Activate the environment
                     conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
 
-                    conda install -y -n "$ENV" -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11
+                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11
 
                     conda deactivate
                     ;;
@@ -725,6 +748,7 @@ check_envs_and_tools() {
 # =========================
 if [[ $INIT_MODE -eq 1 ]]; then
     check_envs_and_tools
+    wait
     echo "QAssfilt initialization completed. Exiting."
     exit 0
 fi
@@ -733,6 +757,12 @@ if [[ "${CONTIG_MODE:-0}" -eq 1 ]]; then
     CONTIG_MODE_DISPLAY="Enabled"
 else
     CONTIG_MODE_DISPLAY="Disabled"
+fi
+
+if [[ "${COMPETITIVE_MODE:-0}" -eq 1 ]]; then
+    COMPETITIVE_MODE_DISPLAY="Enabled"
+else
+    COMPETITIVE_MODE_DISPLAY="Disabled"
 fi
 
 # ABRITAMR mode display
@@ -848,39 +878,41 @@ fi
 # =========================
 print_intro() {
     echo "You have specified the following options:"
-    echo "    INPUT_PATH          = $(realpath -m "$INPUT_PATH")"
-    echo "    CONTIG_MODE         = ${CONTIG_MODE_DISPLAY}"
-    echo -n "    KRAKEN2_MODE        = $KRAKEN2_MODE_DISPLAY"
+    echo "    INPUT_PATH            = $(realpath -m "$INPUT_PATH")"
+    echo "    CONTIG_MODE           = ${CONTIG_MODE_DISPLAY}"
+    echo "    COMPETITIVE_MODE      = ${COMPETITIVE_MODE_DISPLAY}"
+    echo -n "    KRAKEN2_MODE          = $KRAKEN2_MODE_DISPLAY"
     [[ -n "$KRAKEN2_DB_PATH" ]] && echo -n " (DB: $KRAKEN2_DB_PATH)"
     echo
 
-    echo -n "    GTDBTK_MODE         = $GTDBTK_MODE_DISPLAY"
+    echo -n "    GTDBTK_MODE           = $GTDBTK_MODE_DISPLAY"
     [[ -n "$GTDBTK_DB_PATH" ]] && echo -n " (DB: $GTDBTK_DB_PATH)"
     echo
 
-    echo -n "    ABRITAMR_MODE       = $ABRITAMR_MODE_DISPLAY"
+    echo -n "    ABRITAMR_MODE         = $ABRITAMR_MODE_DISPLAY"
     [[ -n "$ABRITAMR_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRITAMR_EXTRA_OPTS)"
     echo
 
-    echo -n "    ABRICATE_MODE       = $ABRICATE_MODE_DISPLAY"
+    echo -n "    ABRICATE_MODE         = $ABRICATE_MODE_DISPLAY"
     [[ -n "$ABRICATE_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRICATE_EXTRA_OPTS)"
     echo
 
-    echo "    INPUT_DIR_DEPTH     = $INPUT_DIR_DEPTH"
-    echo "    CHECKM2DB_PATH      = $CHECKM2DB_PATH"
-    echo "    OUTPUT_PATH         = $(realpath -m "$OUTPUT_PATH")"
-    echo "    SPADES_THREADS      = $SPADES_THREADS"
-    echo "    FASTP_THREADS       = $FASTP_THREADS"
-    echo "    CHECKM2_THREADS     = $CHECKM2_THREADS"
-    echo "    QUAST_THREADS       = $QUAST_THREADS"
-    echo "    KRAKEN2_THREADS     = $KRAKEN2_THREADS"
-    echo "    GTDBTK_THREADS      = $GTDBTK_THREADS"
-    echo "    QUAST_REFERENCE     = $QUAST_REFERENCE"
-    echo "    SEQKIT_MIN_COV      = $SEQKIT_MIN_COV"
-    echo "    SEQKIT_MIN_LENGTH   = $SEQKIT_MIN_LENGTH"
-    echo "    SKIP_STEPS          = ${SKIP_STEPS[*]}"
-    echo "    FASTP_EXTRA_OPTS    = $FASTP_EXTRA_OPTS"
-    echo "    SPADES_EXTRA_OPTS   = $SPADES_EXTRA_OPTS"
+    echo "    INPUT_DIR_DEPTH       = $INPUT_DIR_DEPTH"
+    echo "    CHECKM2DB_PATH        = $CHECKM2DB_PATH"
+    echo "    OUTPUT_PATH           = $(realpath -m "$OUTPUT_PATH")"
+    echo "    COMPETITIVE_THREADS   = $COMPETITIVE_THREADS"
+    echo "    SPADES_THREADS        = $SPADES_THREADS"
+    echo "    FASTP_THREADS         = $FASTP_THREADS"
+    echo "    CHECKM2_THREADS       = $CHECKM2_THREADS"
+    echo "    QUAST_THREADS         = $QUAST_THREADS"
+    echo "    KRAKEN2_THREADS       = $KRAKEN2_THREADS"
+    echo "    GTDBTK_THREADS        = $GTDBTK_THREADS"
+    echo "    QUAST_REFERENCE       = $QUAST_REFERENCE"
+    echo "    SEQKIT_MIN_COV        = $SEQKIT_MIN_COV"
+    echo "    SEQKIT_MIN_LENGTH     = $SEQKIT_MIN_LENGTH"
+    echo "    SKIP_STEPS            = ${SKIP_STEPS[*]}"
+    echo "    FASTP_EXTRA_OPTS      = $FASTP_EXTRA_OPTS"
+    echo "    SPADES_EXTRA_OPTS     = $SPADES_EXTRA_OPTS"
     echo ""
 }
 
@@ -983,40 +1015,42 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
 	echo -e "QAssfilt Pipeline Progressing..."  # Print the static part
 	echo -e "------------------------------------------------"
 	echo -e "Options specified"
-    echo -e "  INPUT_PATH        : $(realpath -m "$INPUT_PATH")"
-    echo -e "  INPUT_DIR_DEPTH   : ${CYAN}$INPUT_DIR_DEPTH${RESET}"
-    echo -e "  OUTPUT_PATH       : $(realpath -m "$OUTPUT_PATH")"
-    echo -e "  CHECKM2DB_PATH    : $CHECKM2DB_PATH"
-    echo -e "  CONTIG_MODE       : $CONTIG_MODE_DISPLAY"
-    echo -n "  KRAKEN2_MODE      : $KRAKEN2_MODE_DISPLAY"
+    echo -e "  INPUT_PATH          : $(realpath -m "$INPUT_PATH")"
+    echo -e "  INPUT_DIR_DEPTH     : ${CYAN}$INPUT_DIR_DEPTH${RESET}"
+    echo -e "  OUTPUT_PATH         : $(realpath -m "$OUTPUT_PATH")"
+    echo -e "  CHECKM2DB_PATH      : $CHECKM2DB_PATH"
+    echo -e "  CONTIG_MODE         : $CONTIG_MODE_DISPLAY"
+    echo -e "  COMPETITIVE_MODE    : $COMPETITIVE_MODE_DISPLAY"
+    echo -n "  KRAKEN2_MODE        : $KRAKEN2_MODE_DISPLAY"
     [[ -n "$KRAKEN2_DB_PATH" ]] && echo -n " (DB: $KRAKEN2_DB_PATH)"
     echo
 
-    echo -n "  GTDBTK_MODE       : $GTDBTK_MODE_DISPLAY"
+    echo -n "  GTDBTK_MODE         : $GTDBTK_MODE_DISPLAY"
     [[ -n "$GTDBTK_DB_PATH" ]] && echo -n " (DB: $GTDBTK_DB_PATH)"
     echo
 
-    echo -n "  ABRITAMR_MODE     : $ABRITAMR_MODE_DISPLAY"
+    echo -n "  ABRITAMR_MODE       : $ABRITAMR_MODE_DISPLAY"
     [[ -n "$ABRITAMR_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRITAMR_EXTRA_OPTS)"
     echo
 
-    echo -n "  ABRICATE_MODE     : $ABRICATE_MODE_DISPLAY"
+    echo -n "  ABRICATE_MODE       : $ABRICATE_MODE_DISPLAY"
     [[ -n "$ABRICATE_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRICATE_EXTRA_OPTS)"
     echo
-    echo -e "  SPADES_THREADS    : ${CYAN}$SPADES_THREADS${RESET}"
-    echo -e "  FASTP_THREADS     : ${CYAN}$FASTP_THREADS${RESET}"
-    echo -e "  CHECKM2_THREADS   : ${CYAN}$CHECKM2_THREADS${RESET}"
-    echo -e "  QUAST_THREADS     : ${CYAN}$QUAST_THREADS${RESET}"
-	echo -e "  KRAKEN2_THREADS   : ${CYAN}$KRAKEN2_THREADS${RESET}"
-	echo -e "  GTDBTK_THREADS    : ${CYAN}$GTDBTK_THREADS${RESET}"
-    echo -e "  QUAST_REFERENCE   : $QUAST_REFERENCE"
-    echo -e "  SEQKIT_MIN_COV    : ${CYAN}$SEQKIT_MIN_COV${RESET}"
-    echo -e "  SEQKIT_MIN_LENGTH : ${CYAN}$SEQKIT_MIN_LENGTH${RESET}"
-    echo -e "  SKIP_STEPS        : ${SKIP_STEPS[*]}"
-    echo -e "  FASTP_EXTRA_OPTS  : ${CYAN}$FASTP_EXTRA_OPTS${RESET}"
-    echo -e "  SPADES_EXTRA_OPTS : ${CYAN}$SPADES_EXTRA_OPTS${RESET}"
-	echo -e "  Sample list       : $(realpath -m "$OUTPUT_PATH")/pipeline_status.tsv"
-	echo -e "  Detail logs       : $(realpath -m "$OUTPUT_PATH")/logs"
+    echo -e "  COMPETITIVE_THREADS : ${CYAN}$COMPETITIVE_THREADS${RESET}"
+    echo -e "  SPADES_THREADS      : ${CYAN}$SPADES_THREADS${RESET}"
+    echo -e "  FASTP_THREADS       : ${CYAN}$FASTP_THREADS${RESET}"
+    echo -e "  CHECKM2_THREADS     : ${CYAN}$CHECKM2_THREADS${RESET}"
+    echo -e "  QUAST_THREADS       : ${CYAN}$QUAST_THREADS${RESET}"
+	echo -e "  KRAKEN2_THREADS     : ${CYAN}$KRAKEN2_THREADS${RESET}"
+	echo -e "  GTDBTK_THREADS      : ${CYAN}$GTDBTK_THREADS${RESET}"
+    echo -e "  QUAST_REFERENCE     : $QUAST_REFERENCE"
+    echo -e "  SEQKIT_MIN_COV      : ${CYAN}$SEQKIT_MIN_COV${RESET}"
+    echo -e "  SEQKIT_MIN_LENGTH   : ${CYAN}$SEQKIT_MIN_LENGTH${RESET}"
+    echo -e "  SKIP_STEPS          : ${SKIP_STEPS[*]}"
+    echo -e "  FASTP_EXTRA_OPTS    : ${CYAN}$FASTP_EXTRA_OPTS${RESET}"
+    echo -e "  SPADES_EXTRA_OPTS   : ${CYAN}$SPADES_EXTRA_OPTS${RESET}"
+	echo -e "  Sample list         : $(realpath -m "$OUTPUT_PATH")/pipeline_status.tsv"
+	echo -e "  Detail logs         : $(realpath -m "$OUTPUT_PATH")/logs"
     echo -e "================================================"
 	    if [[ -f "$STATUS_FILE" ]]; then
     TOTAL=$(($(wc -l < "$STATUS_FILE") - 1))
@@ -1031,30 +1065,30 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
         }' "$STATUS_FILE" | sort -u | wc -l)
     echo -e "           >>> PROCESSING STATUS <<<"
     echo -e "================================================"
-    echo -e "  Samples processed : ${CYAN}${RUNNED}${RESET}/${CYAN}${TOTAL}${RESET}"
+    echo -e "  Samples processed   : ${CYAN}${RUNNED}${RESET}/${CYAN}${TOTAL}${RESET}"
 fi
     # -------------------------
     # Print current sample vertically
     # -------------------------
     grep "^$SAMPLE" "$STATUS_FILE" | while IFS=$'\t' read -r sample fastp spades quastb checkm2b filter quasta checkm2a kraken2b kraken2a gtdbtkb gtdbtka abritamrb abritamra abricateb abricatea multiqc; do
-          echo -e "  Sample analyzing  : ${CYAN}${sample}${RESET}"
+          echo -e "  Sample analyzing    : ${CYAN}${sample}${RESET}"
           echo -e ""
-          printf "%-19s : %s\n" "  FASTP" "$fastp"
-          printf "%-19s : %s\n" "  SPADES" "$spades"
-          printf "%-19s : %s\n" "  QUAST-b" "$quastb"
-          printf "%-19s : %s\n" "  CHECKM2-b" "$checkm2b"
-          printf "%-19s : %s\n" "  FILTER" "$filter"
-          printf "%-19s : %s\n" "  QUAST-a" "$quasta"
-          printf "%-19s : %s\n" "  CHECKM2-a" "$checkm2a"
-          printf "%-19s : %s\n" "  KRAKEN2-b" "$kraken2b"
-          printf "%-19s : %s\n" "  KRAKEN2-a" "$kraken2a"
-          printf "%-19s : %s\n" "  GTDBTK-b" "$gtdbtkb"
-          printf "%-19s : %s\n" "  GTDBTK-a" "$gtdbtka"
-          printf "%-19s : %s\n" "  ABRITAMR-b" "$abritamrb"
-          printf "%-19s : %s\n" "  ABRITAMR-a" "$abritamra"
-          printf "%-19s : %s\n" "  ABRICATE-b" "$abricateb"
-          printf "%-19s : %s\n" "  ABRICATE-a" "$abricatea"
-          printf "%-19s : %s\n" "  MULTIQC" "$multiqc"
+          printf "%-21s : %s\n" "  FASTP" "$fastp"
+          printf "%-21s : %s\n" "  SPADES" "$spades"
+          printf "%-21s : %s\n" "  QUAST-b" "$quastb"
+          printf "%-21s : %s\n" "  CHECKM2-b" "$checkm2b"
+          printf "%-21s : %s\n" "  FILTER" "$filter"
+          printf "%-21s : %s\n" "  QUAST-a" "$quasta"
+          printf "%-21s : %s\n" "  CHECKM2-a" "$checkm2a"
+          printf "%-21s : %s\n" "  KRAKEN2-b" "$kraken2b"
+          printf "%-21s : %s\n" "  KRAKEN2-a" "$kraken2a"
+          printf "%-21s : %s\n" "  GTDBTK-b" "$gtdbtkb"
+          printf "%-21s : %s\n" "  GTDBTK-a" "$gtdbtka"
+          printf "%-21s : %s\n" "  ABRITAMR-b" "$abritamrb"
+          printf "%-21s : %s\n" "  ABRITAMR-a" "$abritamra"
+          printf "%-21s : %s\n" "  ABRICATE-b" "$abricateb"
+          printf "%-21s : %s\n" "  ABRICATE-a" "$abricatea"
+          printf "%-21s : %s\n" "  MULTIQC" "$multiqc"
           echo -e "------------------------------------------------"
     done
 fi
@@ -1359,7 +1393,6 @@ process_sample() {
 				[[ $QUASTB_EXIT -eq 0 ]] && update_status "$SAMPLE" "QUAST-b" "OK" || update_status "$SAMPLE" "QUAST-b" "FAIL" "$LOG_DIR/${SAMPLE}_quast_before.log"
 			fi
 		else
-			echo "[WARN] $SAMPLE: CONTIGS_BEFORE not found, skipping QUAST-b"
 			update_status "$SAMPLE" "QUAST-b" "SKIPPED"
 		fi
 
@@ -1397,7 +1430,6 @@ process_sample() {
 				[[ $CHECKM2B_EXIT -eq 0 ]] && update_status "$SAMPLE" "CHECKM2-b" "OK" || update_status "$SAMPLE" "CHECKM2-b" "FAIL" "$LOG_FILE"
 			fi
 		else
-			echo "[WARN] $SAMPLE: CONTIGS_BEFORE not found, skipping CHECKM2-b"
 			update_status "$SAMPLE" "CHECKM2-b" "SKIPPED"
 		fi
 
@@ -1447,7 +1479,6 @@ process_sample() {
 				conda deactivate
 			fi
 		else
-			echo "[WARN] $SAMPLE: CONTIGS_BEFORE not found, skipping FILTER"
 			update_status "$SAMPLE" "FILTER" "SKIPPED"
 		fi
 
@@ -1477,10 +1508,8 @@ process_sample() {
 				[[ $QUASTA_EXIT -eq 0 ]] && update_status "$SAMPLE" "QUAST-a" "OK" || update_status "$SAMPLE" "QUAST-a" "FAIL" "$LOG_DIR/${SAMPLE}_quast_after.log"
 			fi
 		else
-			echo "[WARN] $SAMPLE: FILTER output not found, skipping QUAST-a"
 			update_status "$SAMPLE" "QUAST-a" "SKIPPED"
 		fi
-
 
 		# =========================
 		# 7. CHECKM2 AFTER FILTERING
@@ -1516,10 +1545,9 @@ process_sample() {
 				[[ $CHECKM2B_EXIT -eq 0 ]] && update_status "$SAMPLE" "CHECKM2-a" "OK" || update_status "$SAMPLE" "CHECKM2-a" "FAIL" "$LOG_FILE"
 			fi
 		else
-			echo "[WARN] $SAMPLE: OUTFILTER not found, skipping CHECKM2-a"
 			update_status "$SAMPLE" "CHECKM2-a" "SKIPPED"
 		fi
-		
+
         # =========================
         # 8. KRAKEN2
         # =========================
@@ -1587,21 +1615,74 @@ process_sample() {
             update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
         fi
 }
-		# =========================
-		# RUN PIPELINE FOR ALL SAMPLES SEQUENTIALLY
-		# =========================
-		for SAMPLE in "${SAMPLES[@]}"; do
-			if [[ $CONTIG_MODE -eq 1 ]]; then
-				R1=""
-				R2=""
-			else
-				R1="${PAIRS["$SAMPLE,1"]:-}"
-				R2="${PAIRS["$SAMPLE,2"]:-}"
-			fi
-			process_sample "$SAMPLE" "$R1" "$R2"
-		done
+# =========================
+# RUN PIPELINE FOR ALL SAMPLES (90% CPU, thread-aware)
+# =========================
 
-		wait
+TOTAL_CORES=$(nproc)
+CORES_ALLOWED=$(( TOTAL_CORES * 90 / 100 ))   # 90% of total cores
+if [[ $CORES_ALLOWED -lt 1 ]]; then CORES_ALLOWED=1; fi
+
+# threads to allocate to each process_sample invocation
+# choose based on how heavy each job is (example: 4 or 8). Adjust to taste.
+THREADS_PER_JOB=${THREADS_PER_JOB:-$COMPETITIVE_THREADS}
+
+# compute how many concurrent jobs we should run
+MAX_JOBS=$(( CORES_ALLOWED / THREADS_PER_JOB ))
+if [[ $MAX_JOBS -lt 1 ]]; then MAX_JOBS=1; fi
+
+# Memory guard (MB)
+MIN_FREE_MEM_MB=${MIN_FREE_MEM_MB:-2048}  # will wait if free mem < this
+
+# helper to get free mem (Linux)
+get_free_mem_mb() {
+    awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0
+}
+
+for SAMPLE in "${SAMPLES[@]}"; do
+    if [[ $CONTIG_MODE -eq 1 ]]; then
+        R1=""
+        R2=""
+        echo "CONTIG: $SAMPLE"
+        process_sample "$SAMPLE" "$R1" "$R2"
+    elif [[ $COMPETITIVE_MODE -eq 1 ]]; then
+        R1="${PAIRS["$SAMPLE,1"]:-}"
+        R2="${PAIRS["$SAMPLE,2"]:-}"
+
+        # Wait for resources: job slots and memory
+        while :; do
+            RUNNING_JOBS=$(jobs -r -p | wc -l)
+            FREE_MEM_MB=$(get_free_mem_mb)
+
+            # Check that we have job slot AND memory slot
+            if (( RUNNING_JOBS < MAX_JOBS && FREE_MEM_MB > MIN_FREE_MEM_MB )); then
+                break
+            fi
+            sleep 1
+        done
+
+        # Export thread environment variables so tools that respect them will limit threads
+        export OMP_NUM_THREADS="$THREADS_PER_JOB"
+        export MKL_NUM_THREADS="$THREADS_PER_JOB"
+        export OPENBLAS_NUM_THREADS="$THREADS_PER_JOB"
+
+        # If your process_sample accepts a threads argument, pass it:
+        # e.g. process_sample <sample> <r1> <r2> --threads "$THREADS_PER_JOB"
+        # I'll call it with an environment variable THREADS set; adapt inside process_sample if needed.
+        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2" &
+
+        # optional: small sleep to avoid starting many at the exact same time
+        sleep 0.5
+
+    else
+        R1="${PAIRS["$SAMPLE,1"]:-}"
+        R2="${PAIRS["$SAMPLE,2"]:-}"
+        echo "SEQUENTIAL: $SAMPLE"
+        process_sample "$SAMPLE" "$R1" "$R2"
+    fi
+done
+
+wait
 
         # =========================
         # 9. GTDBTK
@@ -2050,7 +2131,7 @@ echo ""
 END_TIME=$(date +%s)
 RUNTIME=$((END_TIME - START_TIME))
 echo "Total runtime: ${RUNTIME} seconds (~$(printf '%02d:%02d:%02d\n' \
-     $((RUNTIME/3600)) $(((RUNTIME/60)%60)) $((RUNTIME%60))))"
+     $((RUNTIME/3600)) $(((RUNTIME/60)%60)) $((RUNTIME%60))))" | tee -a $PARAM_LOG
 echo ""
 echo "----------------------------------------------------------"
 echo "               QAssfilt Pipeline completed!"
