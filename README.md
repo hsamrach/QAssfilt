@@ -46,11 +46,11 @@ conda update -n base -c defaults conda
 ```
 Now you have your conda installed and activated via miniconda3.
 
-The installation above is for Linux OS only. If you are using others, please find it via this link: https://repo.anaconda.com/miniconda and choose the one which suit with you.
+The installation above is for Linux OS only. If you are using others, please find it via this link: https://repo.anaconda.com/miniconda and choose the one that suits you.
 ## QAssfilt installation
 Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
-conda install -n base -c samrachhan11 qassfilt -y
+conda install -n base -c samrachhan11 qassfilt=1.2.4 -y
 qassfilt -h # to show help
 ```
 Otherwise, you could install QAssfilt through git clone also:
