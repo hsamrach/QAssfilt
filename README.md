@@ -6,7 +6,7 @@ QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built without using containers, starting from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis (credited to [bohra](https://github.com/MDU-PHL/bohra)). Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer.
 # QAssfilt workflow
-![Logo](QAssfilt_workflow_v2.jpg)
+![Logo](QAssfilt_workflow_v3.jpg)
 # Quick guide
 Initialization is needed after installing QAssfilt. Please see [Initialization](https://github.com/hsamrach/QAssfilt#initialization) section.
 ```
@@ -19,7 +19,7 @@ qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_datab
 qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -id 2 --fastp "-q 30 -u 30" --spades "--isolate"
 
 # Users unsatisfied with the default options
-qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -st 64 -ft 32 -ct 64 -qt 64 -mc 50 -ml 1000 --skip "FASTP"
+qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -cp -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -st 64 -ft 32 -ct 64 -qt 64 -mc 50 -ml 1000 --skip "FASTP"
 ```
 # Installation
 ## Conda installation
@@ -62,42 +62,44 @@ chmod +x qassfilt.sh
 ```
 # Usage
 ```
-Usage: qassfilt -i ~/dir -o ~/dir [options]
-
-  --initial, -ini                       Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)
-  --input_path, -i [dir]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
-  --contigs, -cg                        Enable contig mode (flag option)
-                                        This will scan for fasta (.fa .fasta .fas .fna) in input_path
-  --output_path, -o [dir]               Path to output directory
-  --input_dir_depth, -id [N]            Define directories to be scanned for fastq file (default: 1)
-                                        e.g.: -id 1 will scan for only files in input_path directory
-                                        e.g.: -id 2 will scan all files in input_path subdirectories
-  --checkm2_db_path, -cd [dir]          Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)
-  --kraken2_db_path, -kd [dir]          Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)
-  --gtdbtk_db_path, -gd [dir]           Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)
-  --spades_threads, -st [N]             Threads for spades (default: 16)
-  --fastp_threads, -ft [N]              Threads for fastp (default: 8)
-  --checkm2_threads, -ct [N]            Threads for CheckM2 (default: 8)
-  --quast_threads, -qt [N]              Threads for QUAST (default: 8)
-  --kraken2_threads, -kt [N]            Threads for KRAKEN2 (default: 8)
-  --gtdbtk_threads, -gt [N]             Threads for GTDBTK (default: 8)
-  --quast_reference, -qr [file]         Path to reference sequence for QUAST (optional)
-  --filter_min_cov, -mc [N]             Minimum (≤) contig coverage to be filtered (default: 10)
-  --filter_min_length, -ml [N]          Minimum (≤) contig length to be filtered (default: 500)
-  --skip [list]                         Skip tool(s) you don't want to use in the pipeline (space-separated)
-                                        e.g.: --skip "FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a
-                                        ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC"
-  --contigs_remove, -cr [file]          A tab-delimited file with path to fasta file (column1) and contig NODE (column2, separated by comma if multiple).
-  --fastp [string]                      Options/parameters to pass directly to fastp
-                                        e.g.: "-q 30 -u 30 -e 15 -l 50 -5 -3, ..."
-  --spades [string]                     Options/parameters to pass directly to SPAdes
-                                        e.g.: "--isolate --careful --cov-cutoff auto, ..."
-  --abricate [string]                   Options/parameters to pass directly to abricate, except "--db" to enable abricate step (default: disable)
-                                        e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80, --threads 8,..."
-  --abritamr [string]                   Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)
-                                        e.g.: Use at least an option to enable abritamr "--species Escherichia, -j 8,..."
-  --version, -v                         Show QAssfilt version and exit
-  --help, -h                            Show this help message and exit
+Usage: qassfilt -i ~/dir -o ~/dir [options]"
+            
+  --initial, -ini            	      Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)"
+  --input_path, -i [dir]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
+  --contigs, -cg            	      Enable contig mode (flag option)"
+                                    This will scan for fasta (.fa .fasta .fas .fna) in input_path"
+  --competitive, -cp           	    Enable competitive mode (flag option)"
+  --output_path, -o [dir]         	Path to output directory"
+  --input_dir_depth, -id [N]    	  Define directories to be scanned for fastq file (default: $INPUT_DIR_DEPTH)"
+                                    e.g.: -id 1 will scan for only files in input_path directory"
+                                    e.g.: -id 2 will scan all files in input_path subdirectories"
+  --checkm2_db_path, -cd [dir]      Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
+  --kraken2_db_path, -kd [dir]      Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)"
+  --gtdbtk_db_path, -gd [dir]      	Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)"
+  --competitive_threads, -cpt [N]  	Number of threads for competitive mode (default: $COMPETITIVE_THREADS)"
+  --spades_threads, -st [N]     	  Threads for spades (default: $SPADES_THREADS)"
+  --fastp_threads, -ft [N]      	  Threads for fastp (default: $FASTP_THREADS)"
+  --checkm2_threads, -ct [N]    	  Threads for CheckM2 (default: $CHECKM2_THREADS)"
+  --quast_threads, -qt [N]      	  Threads for QUAST (default: $QUAST_THREADS)"
+  --kraken2_threads, -kt [N]      	Threads for KRAKEN2 (default: $KRAKEN2_THREADS)"
+  --gtdbtk_threads, -gt [N]       	Threads for GTDBTK (default: $GTDBTK_THREADS)"
+  --quast_reference, -qr [file]   	Path to reference sequence for QUAST (optional)"
+  --filter_min_cov, -mc [N]       	Minimum (≤) contig coverage to be filtered (default: $SEQKIT_MIN_COV)"
+  --filter_min_length, -ml [N]    	Minimum (≤) contig length to be filtered (default: $SEQKIT_MIN_LENGTH)"
+  --skip [list]                   	Skip tool(s) you don't want to use in the pipeline (space-separated)"
+                                    e.g.: --skip \"FASTP SPADES QUAST-b CHECKM2-b FILTER QUAST-a CHECKM2-a KRAKEN2-b KRAKEN2-a GTDBTK-b GTDBTK-a"
+                                    ABRITAMR-b ABRITAMR-a ABRICATE-b ABRICATE-a MULTIQC\""
+  --contigs_remove, -cr [file]    	A tab-delimited file with path to fasta file (column1) and contig NODE (column2, separated by comma if multiple)."
+  --fastp [string]                	Options/parameters to pass directly to fastp"
+                                    e.g.: \"-q 30 -u 30 -e 15 -l 50 -5 -3, ...\""
+  --spades [string]               	Options/parameters to pass directly to SPAdes"
+                                    e.g.: \"--isolate --careful --cov-cutoff auto, ...\""
+  --abricate [string]             	Options/parameters to pass directly to abricate, except \"--db\" to enable abricate step (default: disable)"
+                                    e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80, --threads 8,...\""
+  --abritamr [string]             	Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)"
+                                    e.g.: Use at least an option to enable abritamr \"--species Escherichia, -j 8,...\""
+  --version, -v              		    Show QAssfilt version and exit"
+  --help, -h                 		    Show this help message and exit"
 ```
 ## Initialization
 After successfully installing QAssfilt, you will have two choices for initialization:
@@ -204,8 +206,20 @@ output_dir/
 For fastp, quast, checkm2, kraken2, and gtdbtk, the output could be viewed in multiqc_reports.
 For abritamr and abricate, the output could be viewed in their own directory.
 ## Options and Parameters
-##### --contigs, -cg
+##### --contigs, -cg (Contigs_Mode)
 Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. (default: disable)
+##### --competitive, -cp (Competitive_Mode)
+Competitive Mode is designed for emergency analyses, maximizing parallel sample processing while safeguarding system resources from overload.
+
+This mode works by automatically detecting available CPUs and calculating the optimal number of parallel sample runs—using up to 90% of total CPUs divided by the specified competitive threads (default: 8)—and monitors RAM, pausing if available memory drops below 2GB to prevent overload and ensure system stability. 
+
+For example: 
+```
+- Calculate 90% of total CPUs (e.g, 64 CPUs)
+64×0.9 = 57.6 ≈ 57 CPUs available for pipeline
+- Divide by competitive threads (e.g, 8 CPUs)
+Number of samples that can run in parallel = 57​/8 ≈ 7 samples
+- Thus, 7 samples will run in parallel. As soon as one of these samples completes a step, the next sample in the queue will begin, ensuring efficient use of system resources.
 ##### --checkm2_db_path, -cd
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
 ##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
