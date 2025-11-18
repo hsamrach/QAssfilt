@@ -39,7 +39,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.4
+VERSION_QAssfilt=1.2.5
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -52,6 +52,7 @@ ABRITAMR_EXTRA_OPTS=""
 ABRICATE_EXTRA_OPTS=""
 RUN_ABRITAMR=0
 RUN_ABRICATE=0
+
 
 # =========================
 # START TIMER
@@ -1684,6 +1685,22 @@ done
 
 wait
 
+# Wrapper helper: if in competitive mode, we wrap inside a function
+wrap_if_competitive() {
+    local name="$1"
+    local body="$(cat)"   # read heredoc body correctly
+
+    if [[ "${COMPETITIVE_MODE:-0}" -eq 1 ]]; then
+        # Create a function wrapping the body
+        eval "$name() {
+$body
+}"
+    else
+        # Execute the block immediately
+        eval "$body"
+    fi
+}
+
         # =========================
         # 9. GTDBTK
         # =========================
@@ -1697,6 +1714,7 @@ wait
                 mkdir -p "${OUTPUT_PATH}/gtdbtk/"
                 export GTDBTK_DATA_PATH="$GTDBTK_DB_PATH"
 
+        wrap_if_competitive run_gtdbtk_before << 'EOF'
             # --- Run on CONTIGS_BEFORE ---
             CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/"
             GTDBTK_BEFORE_DIR="${OUTPUT_PATH}/gtdbtk/before"
@@ -1715,6 +1733,7 @@ wait
                 --extension fasta \
                 --force \
                 --skip_ani_screen \
+                --pplacer_cpus "$GTDBTK_THREADS" \
                 --prefix before \
                 >>"$GTDBTKLOG" 2>&1
                     # Update GTDBTK-b status for all samples based on last command exit
@@ -1737,7 +1756,9 @@ wait
                         update_status "$SAMPLE" "GTDBTK-b" "SKIPPED"
                     done
                     fi
+EOF
 
+            wrap_if_competitive run_gtdbtk_after << 'EOF'
             # --- Run on OUTFILTER ---
             OUTFILTER="${OUTPUT_PATH}/contigs_filtered/"
             GTDBTK_AFTER_DIR="${OUTPUT_PATH}/gtdbtk/after"
@@ -1756,6 +1777,7 @@ wait
                 --extension fasta \
                 --force \
                 --skip_ani_screen \
+                --pplacer_cpus "$GTDBTK_THREADS" \
                 --prefix after \
                 >>"$GTDBTKLOG" 2>&1
                     # Update GTDBTK-a status for all samples based on last command exit
@@ -1778,9 +1800,11 @@ wait
                         update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
                     done
                     fi
-                fi
-            fi
+EOF
+fi
+fi
 
+wrap_if_competitive run_abritamr << 'EOF'
 # =========================
 # 10. ABRITAMR
 # =========================
@@ -1880,7 +1904,9 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
         done
     fi
 fi
+EOF
 
+wrap_if_competitive run_abricate << 'EOF'
 # =========================
 # 11. ABRICATE
 # =========================
@@ -1977,6 +2003,32 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
             update_status "$SAMPLE" "ABRICATE-a" "SKIPPED"
         done
     fi
+fi
+EOF
+
+if [[ "$COMPETITIVE_MODE" -eq 1 ]]; then
+    echo "[INFO] Competitive mode ON — running GTDBTK + ABRITAMR + ABRICATE in parallel"
+
+    run_gtdbtk_before &
+    PID_GTDBTK_B=$!
+
+    run_gtdbtk_after &
+    PID_GTDBTK_A=$!
+
+    run_abritamr &
+    PID_ABRITAMR=$!
+
+    run_abricate &
+    PID_ABRICATE=$!
+
+    # Wait for all four jobs
+    wait $PID_GTDBTK_B
+    wait $PID_GTDBTK_A
+    wait $PID_ABRITAMR
+    wait $PID_ABRICATE
+
+else
+    echo "[INFO] Competitive mode OFF — running tools sequentially"
 fi
 
 		# =========================
