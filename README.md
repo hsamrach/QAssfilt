@@ -220,6 +220,8 @@ For example:
 - Divide by competitive threads (e.g, 8 CPUs)
 Number of samples that can run in parallel = 57​/8 ≈ 7 samples
 - Thus, 7 samples will run in parallel. As soon as one of these samples completes a step, the next sample in the queue will begin, ensuring efficient use of system resources.
+
+Note: once competitive mode is enabled, the workflow of GTDBTk, Abritamr, and Abricate will be changed to run GTDBTk-b/-a, abritamr-b, and abricate-b in parallel.
 ```
 ##### --checkm2_db_path, -cd
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
