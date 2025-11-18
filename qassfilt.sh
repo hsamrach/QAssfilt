@@ -39,7 +39,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.5
+VERSION_QAssfilt=1.2.6
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -1817,7 +1817,7 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     # --- Run on CONTIGS_BEFORE ---
     CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/"
     ABRITAMR_BEFORE_OUT="${OUTPUT_PATH}/abritamr/before"
-    mkdir -p "$ABRITAMR_BEFORE_OUT"
+
 
     if is_skipped "ABRITAMR-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
@@ -1826,6 +1826,7 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     elif [[ -d "$CONTIGS_BEFORE" && $(find "$CONTIGS_BEFORE" -name '*.fasta' | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-b" || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-b" "RUNNING"
+                mkdir -p "$ABRITAMR_BEFORE_OUT"
             conda activate qassfilt_abritamr >/dev/null 2>&1 || true
 
             # Create .tab mapping file
@@ -1862,7 +1863,6 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     # --- Run on OUTFILTER ---
     OUTFILTER="${OUTPUT_PATH}/contigs_filtered/"
     ABRITAMR_AFTER_OUT="${OUTPUT_PATH}/abritamr/after"
-    mkdir -p "$ABRITAMR_AFTER_OUT"
 
     if is_skipped "ABRITAMR-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
@@ -1871,6 +1871,7 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     elif [[ -d "$OUTFILTER" && $(find "$OUTFILTER" -name '*.fasta' | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-a" || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-a" "RUNNING"
+                mkdir -p "$ABRITAMR_AFTER_OUT"
             conda activate qassfilt_abritamr >/dev/null 2>&1 || true
 
             # Create .tab mapping file
@@ -2009,23 +2010,54 @@ EOF
 if [[ "$COMPETITIVE_MODE" -eq 1 ]]; then
     echo "[INFO] Competitive mode ON — running GTDBTK + ABRITAMR + ABRICATE in parallel"
 
-    run_gtdbtk_before &
-    PID_GTDBTK_B=$!
+    # -------------------------------
+    # GTDBTK-before (only if enabled)
+    # -------------------------------
+    if [[ "${GTDBTK_MODE:-0}" -eq 1 ]]; then
+        run_gtdbtk_before &
+        PID_GTDBTK_B=$!
+    else
+        PID_GTDBTK_B=""
+    fi
 
-    run_gtdbtk_after &
-    PID_GTDBTK_A=$!
+    # ------------------------------
+    # GTDBTK-after (only if enabled)
+    # ------------------------------
+    if [[ "${GTDBTK_MODE:-0}" -eq 1 ]]; then
+        run_gtdbtk_after &
+        PID_GTDBTK_A=$!
+    else
+        PID_GTDBTK_A=""
+    fi
 
-    run_abritamr &
-    PID_ABRITAMR=$!
+    # -------------------------
+    # ABRITAMR (only if enabled)
+    # -------------------------
+    if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
+        run_abritamr &
+        PID_ABRITAMR=$!
+    else
+        PID_ABRITAMR=""
+    fi
 
-    run_abricate &
-    PID_ABRICATE=$!
+    # -------------------------
+    # ABRICATE (only if enabled)
+    # -------------------------
+    if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
+        run_abricate &
+        PID_ABRICATE=$!
+    else
+        PID_ABRICATE=""
+    fi
 
-    # Wait for all four jobs
-    wait $PID_GTDBTK_B
-    wait $PID_GTDBTK_A
-    wait $PID_ABRITAMR
-    wait $PID_ABRICATE
+    # -------------------------
+    # Wait for only active jobs
+    # -------------------------
+    for PID in "$PID_GTDBTK_B" "$PID_GTDBTK_A" "$PID_ABRITAMR" "$PID_ABRICATE"; do
+        if [[ -n "$PID" ]]; then
+            wait "$PID"
+        fi
+    done
 
 else
     echo "[INFO] Competitive mode OFF — running tools sequentially"
