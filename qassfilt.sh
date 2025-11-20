@@ -2,8 +2,24 @@
 
 #All rights reserved. © 2025 QAssfilt, Samrach Han
 
-# List all possible conda installation paths
-for d in "$HOME"/miniconda* "$HOME"/anaconda* "$HOME"/mambaforge "$HOME"/miniforge*; do
+# Search for conda.sh in common locations
+for d in \
+    $HOME/miniconda* \
+    $HOME/anaconda* \
+    $HOME/conda \
+    $HOME/miniforge* \
+    $HOME/mambaforge \
+    /opt/miniconda* \
+    /opt/anaconda* \
+    /opt/miniforge* \
+    /opt/mambaforge \
+    /opt/conda \
+    /usr/local/miniconda* \
+    /usr/local/anaconda* \
+    /usr/local/miniforge* \
+    /usr/local/mambaforge \
+    /usr/local/conda
+do
     if [ -f "$d/etc/profile.d/conda.sh" ]; then
         source "$d/etc/profile.d/conda.sh"
         found=1
