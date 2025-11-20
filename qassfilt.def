@@ -1,0 +1,118 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%labels
+    Author "hsamrach"
+    Version "1.2.7"
+    Tool "QAssfilt"
+
+%environment
+    # Add Miniconda to PATH
+    export PATH=/opt/miniconda3/bin:$PATH
+
+    # Source conda.sh if it exists
+    if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
+        . /opt/miniconda3/etc/profile.d/conda.sh
+        export CONDA_DEFAULT_ENV=base
+    fi
+
+%post
+    # Use bash explicitly
+    /bin/bash <<'BASHPOST'
+
+apt-get update && apt-get install -y \
+    wget \
+    git \
+    curl \
+    ca-certificates \
+    bzip2 \
+    bash \
+    bsdmainutils \
+    gawk \
+    sed \
+    grep \
+    findutils \
+    coreutils \
+    bc \
+    parallel \
+    util-linux \
+    tar \
+    gzip \
+    build-essential \
+    procps \
+    unzip \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+echo "=== Installing Miniconda ==="
+cd /opt
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh
+bash Miniconda3.sh -b -p /opt/miniconda3
+rm Miniconda3.sh
+
+# Ensure conda is initialized
+. /opt/miniconda3/etc/profile.d/conda.sh
+conda init bash
+
+echo "=== Accepting Anaconda TOS ==="
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+echo "=== Updating conda ==="
+conda update -n base -c defaults -y conda
+
+echo "=== Installing QAssfilt from Conda ==="
+conda install -n base -c samrachhan11 -y qassfilt=1.2.7
+
+conda create -n qassfilt_abricate -y
+conda install -y -n qassfilt_abricate -c defaults -c bioconda -c conda-forge abricate=1.0.1
+
+conda create -n qassfilt_abritamr -y
+conda install -y -n qassfilt_abritamr -c defaults -c conda-forge -c bioconda abritamr=1.0.19
+
+conda create -n qassfilt_gtdbtk -y
+conda install -y -n qassfilt_gtdbtk -c defaults -c conda-forge -c bioconda gtdbtk=2.5.2 python=3.11
+
+conda create -n qassfilt_kraken2 -y
+conda install -y -n qassfilt_kraken2 -c defaults -c conda-forge -c bioconda kraken2=2.1.6
+
+conda create -n qassfilt_checkm2 python=3.12 -y
+conda install -y -n qassfilt_checkm2 -c defaults -c conda-forge -c bioconda checkm2=1.1.0
+
+conda create -n qassfilt_fastp python=3.12 -y
+conda install -y -n qassfilt_fastp -c defaults -c conda-forge -c bioconda fastp=1.0.1
+
+conda create -n qassfilt_spades python=3.12 -y
+conda install -y -n qassfilt_spades -c defaults -c conda-forge -c bioconda spades=4.2.0
+
+conda create -n qassfilt_quast python=3.12 -y
+conda install -y -n qassfilt_quast -c defaults -c conda-forge -c bioconda quast=5.3.0
+
+conda create -n qassfilt_seqkit python=3.12 -y
+conda install -y -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda seqkit=2.10.1
+
+conda create -n qassfilt_multiqc python=3.12 -y
+conda install -y -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda multiqc=1.31
+
+echo "=== Cleaning Conda caches ==="
+conda clean -a -y
+
+BASHPOST
+
+%runscript
+#!/bin/bash
+set -x
+echo "RUNSCRIPT STARTED"
+echo "Arguments: $@"
+
+if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
+    . /opt/miniconda3/etc/profile.d/conda.sh
+    eval "$(conda shell.bash hook)"
+    conda activate base
+fi
+
+exec qassfilt "$@"
+
+%help
+    This container contains QAssfilt installed using Conda.
+    Usage:
+        apptainer run qassfilt.sif --help
