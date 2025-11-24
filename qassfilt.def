@@ -3,7 +3,7 @@ From: ubuntu:22.04
 
 %labels
     Author "hsamrach"
-    Version "1.2.7"
+    Version "1.2.8"
     Tool "QAssfilt"
 
 %environment
@@ -115,4 +115,5 @@ exec qassfilt "$@"
 %help
     This container contains QAssfilt installed using Conda.
     Usage:
-        apptainer run qassfilt.sif --help
+        apptainer run --bind /srv:/srv qassfilt.sif --help
+        apptainer run --bind /home:/home qassfilt.sif --help
