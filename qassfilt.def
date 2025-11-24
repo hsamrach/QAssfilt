@@ -3,53 +3,37 @@ From: ubuntu:22.04
 
 %labels
     Author "hsamrach"
-    Version "1.2.8"
+    Version "1.3.0"
     Tool "QAssfilt"
 
-%environment
-    # Add Miniconda to PATH
-    export PATH=/opt/miniconda3/bin:$PATH
-
-    # Source conda.sh if it exists
-    if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
-        . /opt/miniconda3/etc/profile.d/conda.sh
-        export CONDA_DEFAULT_ENV=base
-    fi
+%files
+# Add local files if needed
+. .
 
 %post
-    # Use bash explicitly
-    /bin/bash <<'BASHPOST'
+/bin/bash <<'BASHPOST'
 
+set -eux
+
+# ============================
+# Install system dependencies
+# ============================
 apt-get update && apt-get install -y \
-    wget \
-    git \
-    curl \
-    ca-certificates \
-    bzip2 \
-    bash \
-    bsdmainutils \
-    gawk \
-    sed \
-    grep \
-    findutils \
-    coreutils \
-    bc \
-    parallel \
-    util-linux \
-    tar \
-    gzip \
-    build-essential \
-    procps \
-    unzip \
+    wget git curl ca-certificates bzip2 bash bsdmainutils gawk sed grep \
+    findutils coreutils bc parallel util-linux tar gzip build-essential \
+    procps unzip tini vim less \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ============================
+# Install Miniconda
+# ============================
 echo "=== Installing Miniconda ==="
 cd /opt
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O Miniconda3.sh
 bash Miniconda3.sh -b -p /opt/miniconda3
 rm Miniconda3.sh
 
-# Ensure conda is initialized
+# Initialize Conda
 . /opt/miniconda3/etc/profile.d/conda.sh
 conda init bash
 
@@ -57,62 +41,103 @@ echo "=== Accepting Anaconda TOS ==="
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
 conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
-echo "=== Updating conda ==="
+echo "=== Updating Conda ==="
 conda update -n base -c defaults -y conda
 
-echo "=== Installing QAssfilt from Conda ==="
+# ============================
+# Install QAssfilt and sub-environments
+# ============================
+echo "=== Installing QAssfilt ==="
 conda install -n base -c samrachhan11 -y qassfilt=1.2.8
 
+# Sub-environments for tools
 conda create -n qassfilt_abricate -y
-conda install -y -n qassfilt_abricate -c defaults -c bioconda -c conda-forge abricate=1.0.1
+conda install -n qassfilt_abricate -c defaults -c bioconda -c conda-forge -y abricate=1.0.1
 
 conda create -n qassfilt_abritamr -y
-conda install -y -n qassfilt_abritamr -c defaults -c conda-forge -c bioconda abritamr=1.0.19
+conda install -n qassfilt_abritamr -c defaults -c conda-forge -c bioconda -y abritamr=1.0.19
 
 conda create -n qassfilt_gtdbtk -y
-conda install -y -n qassfilt_gtdbtk -c defaults -c conda-forge -c bioconda gtdbtk=2.5.2 python=3.11
+conda install -n qassfilt_gtdbtk -c defaults -c conda-forge -c bioconda -y gtdbtk=2.5.2 python=3.11
 
 conda create -n qassfilt_kraken2 -y
-conda install -y -n qassfilt_kraken2 -c defaults -c conda-forge -c bioconda kraken2=2.1.6
+conda install -n qassfilt_kraken2 -c defaults -c conda-forge -c bioconda -y kraken2=2.1.6
 
 conda create -n qassfilt_checkm2 python=3.12 -y
-conda install -y -n qassfilt_checkm2 -c defaults -c conda-forge -c bioconda checkm2=1.1.0
+conda install -n qassfilt_checkm2 -c defaults -c conda-forge -c bioconda -y checkm2=1.1.0
 
 conda create -n qassfilt_fastp python=3.12 -y
-conda install -y -n qassfilt_fastp -c defaults -c conda-forge -c bioconda fastp=1.0.1
+conda install -n qassfilt_fastp -c defaults -c conda-forge -c bioconda -y fastp=1.0.1
 
 conda create -n qassfilt_spades python=3.12 -y
-conda install -y -n qassfilt_spades -c defaults -c conda-forge -c bioconda spades=4.2.0
+conda install -n qassfilt_spades -c defaults -c conda-forge -c bioconda -y spades=4.2.0
 
 conda create -n qassfilt_quast python=3.12 -y
-conda install -y -n qassfilt_quast -c defaults -c conda-forge -c bioconda quast=5.3.0
+conda install -n qassfilt_quast -c defaults -c conda-forge -c bioconda -y quast=5.3.0
 
 conda create -n qassfilt_seqkit python=3.12 -y
-conda install -y -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda seqkit=2.10.1
+conda install -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda -y seqkit=2.10.1
 
 conda create -n qassfilt_multiqc python=3.12 -y
-conda install -y -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda multiqc=1.31
+conda install -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda -y multiqc=1.31
 
-echo "=== Cleaning Conda caches ==="
+# Clean conda caches
 conda clean -a -y
+
+# ============================
+# Create working directory
+# ============================
+mkdir -p /home/qassfilt/workdir
+chmod 777 -R /home/qassfilt/workdir
 
 BASHPOST
 
-%runscript
-#!/bin/bash
-set -x
-echo "RUNSCRIPT STARTED"
+# ============================
+# Environment variables
+# ============================
+%environment
+export PATH="/opt/miniconda3/bin:$PATH"
+export CONDA_HOME=/opt/miniconda3
+export QAssfilt_WD=/home/qassfilt/workdir
+export TINI_SUBREAPER=true
 
-if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
+# Prevent host Conda contamination
+unset CONDA_EXE
+unset CONDA_PREFIX
+unset CONDA_PYTHON_EXE
+unset _CE_M
+unset _CE_CONDA
+unset CONDA_SHLVL
+unset CONDA_PROMPT_MODIFIER
+
+# Load Conda only in interactive shells to avoid 'local' errors
+if [[ $- == *i* ]] && [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
     . /opt/miniconda3/etc/profile.d/conda.sh
     eval "$(conda shell.bash hook)"
-    conda activate base
 fi
 
-exec qassfilt "$@"
+# ============================
+# Run script
+# ============================
+%runscript
+#!/bin/bash
+set -e
 
+# Load Conda
+source /opt/miniconda3/etc/profile.d/conda.sh
+eval "$(conda shell.bash hook)"
+
+# Activate base environment
+conda activate base
+
+# Run tini to wrap command
+exec tini -- qassfilt "$@"
+
+# ============================
+# Help section
+# ============================
 %help
-    This container contains QAssfilt installed using Conda.
+    This container contains QAssfilt with BOHRA-style Conda environment handling.
     Usage:
-        apptainer run --bind /srv:/srv qassfilt.sif --help
-        apptainer run --bind /home:/home qassfilt.sif --help
+        apptainer run --cleanenv --bind /srv:/srv qassfilt.sif --help
+        apptainer run --cleanenv --bind /srv:/srv qassfilt.sif -i input -o output
