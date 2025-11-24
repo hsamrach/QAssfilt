@@ -7,7 +7,7 @@ package:
 
 source:
   url: https://github.com/hsamrach/QAssfilt/archive/refs/tags/{{ version }}.tar.gz
-  sha256: 
+  sha256: e8c1df0cf3b2e3182fbd505527aab26cd88e58a8b7dce8d57145bff409507fa2
 
 build:
   noarch: generic
