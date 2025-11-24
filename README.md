@@ -289,7 +289,12 @@ QAssfilt uses the following dependency tools:
 - [ABRitAMR](https://github.com/MDU-PHL/abritamr)
 - [ABRicate](https://github.com/tseemann/abricate)
 - [MultiQC](https://github.com/MultiQC/MultiQC)
+
 If you are using any of them in this QAssfilt pipeline, please cite each one.
+# Container
+You will find qassfilt.def in the main, if you would like to build the container using Apptainer.
+
+If you prefer to use the pre-built container, please let us know via these emails: hsamrach@pasteur-kh.org or hansamrach11@gmail.com
 # Information
 ## License
 QAssfilt is free for everyone, and released under [GPL (version 3)](https://github.com/hsamrach/QAssfilt/blob/main/LICENSE).
