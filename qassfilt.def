@@ -102,7 +102,6 @@ BASHPOST
 #!/bin/bash
 set -x
 echo "RUNSCRIPT STARTED"
-echo "Arguments: $@"
 
 if [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
     . /opt/miniconda3/etc/profile.d/conda.sh
