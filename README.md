@@ -306,4 +306,5 @@ QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://githu
 Special thanks to Sokleaph Cheng and Bertrand Guillard for their support.
 
 **Citation: Han S., Khan F., Guillard B., Cheng S., Rahi P. (2025). QAssfilt. GitHub: https://github.com/hsamrach/QAssfilt**
+
 **Resourced by Bacteriology And Antibiotic Resistance Group, Medical Biology Laboratory, Institut Pasteur du Cambodge.**
