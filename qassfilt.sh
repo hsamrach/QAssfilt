@@ -4,16 +4,16 @@
 
 # Search for conda.sh in common locations
 for d in \
-    $HOME/miniconda* \
-    $HOME/anaconda* \
-    $HOME/conda \
-    $HOME/miniforge* \
-    $HOME/mambaforge \
     /opt/miniconda* \
     /opt/anaconda* \
     /opt/miniforge* \
     /opt/mambaforge \
     /opt/conda \
+    $HOME/miniconda* \
+    $HOME/anaconda* \
+    $HOME/conda \
+    $HOME/miniforge* \
+    $HOME/mambaforge \
     /usr/local/miniconda* \
     /usr/local/anaconda* \
     /usr/local/miniforge* \
@@ -84,7 +84,7 @@ while [[ $# -gt 0 ]]; do
         --checkm2_db_path|-cd) CHECKM2DB_PATH="$2"; shift 2 ;;
         --kraken2_db_path|-kd) KRAKEN2_DB_PATH="$2"; shift 2 ;;
         --gtdbtk_db_path|-gd) GTDBTK_DB_PATH="$2"; shift 2 ;;
-        --threads|-t) COMPETITIVE_THREADS="$2"; shift 2 ;;
+        --threads|-t) THREADS="$2"; shift 2 ;;
         --gtdbtk_threads|-gt) GTDBTK_THREADS="$2"; shift 2 ;;
         --quast_reference|-qr) QUAST_REFERENCE="$2"; shift 2 ;;
         --filter_min_cov|-mc) SEQKIT_MIN_COV="$2"; shift 2 ;;
