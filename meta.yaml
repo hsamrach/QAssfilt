@@ -1,5 +1,5 @@
 {% set name = "qassfilt" %}
-{% set version = "1.2.8" %}
+{% set version = "1.3.0" %}
 
 package:
   name: {{ name|lower }}
@@ -7,11 +7,11 @@ package:
 
 source:
   url: https://github.com/hsamrach/QAssfilt/archive/refs/tags/{{ version }}.tar.gz
-  sha256: e8c1df0cf3b2e3182fbd505527aab26cd88e58a8b7dce8d57145bff409507fa2
+  sha256: 
 
 build:
   noarch: generic
-  number: 8
+  number: 0
   run_exports:
     - {{ pin_subpackage("qassfilt", max_pin="x") }}
   script: |
