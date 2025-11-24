@@ -41,13 +41,8 @@ set -eo pipefail
 INPUT_PATH=""
 OUTPUT_PATH=""
 INPUT_DIR_DEPTH=1
-COMPETITIVE_THREADS=8
-SPADES_THREADS=16
-FASTP_THREADS=8
-CHECKM2_THREADS=8
+THREADS=8
 QUAST_REFERENCE=""
-QUAST_THREADS=8
-KRAKEN2_THREADS=8
 GTDBTK_THREADS=8
 SEQKIT_MIN_COV=10
 SEQKIT_MIN_LENGTH=500
@@ -55,7 +50,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.2.7
+VERSION_QAssfilt=1.2.8
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -89,12 +84,7 @@ while [[ $# -gt 0 ]]; do
         --checkm2_db_path|-cd) CHECKM2DB_PATH="$2"; shift 2 ;;
         --kraken2_db_path|-kd) KRAKEN2_DB_PATH="$2"; shift 2 ;;
         --gtdbtk_db_path|-gd) GTDBTK_DB_PATH="$2"; shift 2 ;;
-        --competitive_threads|-cpt) COMPETITIVE_THREADS="$2"; shift 2 ;;
-        --spades_threads|-st) SPADES_THREADS="$2"; shift 2 ;;
-        --fastp_threads|-ft) FASTP_THREADS="$2"; shift 2 ;;
-        --checkm2_threads|-ct) CHECKM2_THREADS="$2"; shift 2 ;;
-        --quast_threads|-qt) QUAST_THREADS="$2"; shift 2 ;;
-        --kraken2_threads|-kt) KRAKEN2_THREADS="$2"; shift 2 ;;
+        --threads|-t) COMPETITIVE_THREADS="$2"; shift 2 ;;
         --gtdbtk_threads|-gt) GTDBTK_THREADS="$2"; shift 2 ;;
         --quast_reference|-qr) QUAST_REFERENCE="$2"; shift 2 ;;
         --filter_min_cov|-mc) SEQKIT_MIN_COV="$2"; shift 2 ;;
@@ -125,12 +115,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --checkm2_db_path, -cd [dir]      	Path to CheckM2 database directory (optional; if not given, pipeline will auto-manage)"
             echo "  --kraken2_db_path, -kd [dir]      	Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)"
             echo "  --gtdbtk_db_path, -gd [dir]      	Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)"
-            echo "  --competitive_threads, -cpt [N]  	Number of threads for competitive mode (default: $COMPETITIVE_THREADS)"
-            echo "  --spades_threads, -st [N]     	Threads for spades (default: $SPADES_THREADS)"
-            echo "  --fastp_threads, -ft [N]      	Threads for fastp (default: $FASTP_THREADS)"
-            echo "  --checkm2_threads, -ct [N]    	Threads for CheckM2 (default: $CHECKM2_THREADS)"
-            echo "  --quast_threads, -qt [N]      	Threads for QUAST (default: $QUAST_THREADS)"
-            echo "  --kraken2_threads, -kt [N]      	Threads for KRAKEN2 (default: $KRAKEN2_THREADS)"
+            echo "  --threads, -t [N]  	                Number of threads for fastp, spades, quast, checkm2, and kraken2 (default: $THREADS)"
             echo "  --gtdbtk_threads, -gt [N]      	Threads for GTDBTK (default: $GTDBTK_THREADS)"
             echo "  --quast_reference, -qr [file]   	Path to reference sequence for QUAST (optional)"
             echo "  --filter_min_cov, -mc [N]     	Minimum (≤) contig coverage to be filtered (default: $SEQKIT_MIN_COV)"
@@ -917,12 +902,7 @@ print_intro() {
     echo "    INPUT_DIR_DEPTH       = $INPUT_DIR_DEPTH"
     echo "    CHECKM2DB_PATH        = $CHECKM2DB_PATH"
     echo "    OUTPUT_PATH           = $(realpath -m "$OUTPUT_PATH")"
-    echo "    COMPETITIVE_THREADS   = $COMPETITIVE_THREADS"
-    echo "    SPADES_THREADS        = $SPADES_THREADS"
-    echo "    FASTP_THREADS         = $FASTP_THREADS"
-    echo "    CHECKM2_THREADS       = $CHECKM2_THREADS"
-    echo "    QUAST_THREADS         = $QUAST_THREADS"
-    echo "    KRAKEN2_THREADS       = $KRAKEN2_THREADS"
+    echo "    THREADS               = $THREADS"
     echo "    GTDBTK_THREADS        = $GTDBTK_THREADS"
     echo "    QUAST_REFERENCE       = $QUAST_REFERENCE"
     echo "    SEQKIT_MIN_COV        = $SEQKIT_MIN_COV"
@@ -1053,12 +1033,7 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
     echo -n "  ABRICATE_MODE       : $ABRICATE_MODE_DISPLAY"
     [[ -n "$ABRICATE_EXTRA_OPTS" ]] && echo -n " (Opts: $ABRICATE_EXTRA_OPTS)"
     echo
-    echo -e "  COMPETITIVE_THREADS : ${CYAN}$COMPETITIVE_THREADS${RESET}"
-    echo -e "  SPADES_THREADS      : ${CYAN}$SPADES_THREADS${RESET}"
-    echo -e "  FASTP_THREADS       : ${CYAN}$FASTP_THREADS${RESET}"
-    echo -e "  CHECKM2_THREADS     : ${CYAN}$CHECKM2_THREADS${RESET}"
-    echo -e "  QUAST_THREADS       : ${CYAN}$QUAST_THREADS${RESET}"
-	echo -e "  KRAKEN2_THREADS     : ${CYAN}$KRAKEN2_THREADS${RESET}"
+    echo -e "  THREADS             : ${CYAN}$THREADS${RESET}"
 	echo -e "  GTDBTK_THREADS      : ${CYAN}$GTDBTK_THREADS${RESET}"
     echo -e "  QUAST_REFERENCE     : $QUAST_REFERENCE"
     echo -e "  SEQKIT_MIN_COV      : ${CYAN}$SEQKIT_MIN_COV${RESET}"
@@ -1333,7 +1308,7 @@ process_sample() {
                   -o "$OUT1" -O "$OUT2" \
                   -h "${FASTP_DIR}/${SAMPLE}_fastp.html" \
                   -j "${FASTP_DIR}/${SAMPLE}_fastp.json" \
-                  -w $FASTP_THREADS $FASTP_EXTRA_OPTS \
+                  -w $THREADS $FASTP_EXTRA_OPTS \
                   >"$LOG_DIR/${SAMPLE}_fastp.log" 2>&1
             FASTP_EXIT=$?
             conda deactivate
@@ -1365,7 +1340,7 @@ process_sample() {
 
             spades.py -1 "$SPADES_R1" -2 "$SPADES_R2" \
                       -o "$SPADES_DIR" \
-                      -t $SPADES_THREADS $SPADES_EXTRA_OPTS \
+                      -t $THREADS $SPADES_EXTRA_OPTS \
                       >"$LOG_DIR/${SAMPLE}_spades.log" 2>&1
             SPADES_EXIT=$?
             conda deactivate
@@ -1397,10 +1372,10 @@ process_sample() {
 				mkdir -p "$OUTDIR_QUAST"
 
 				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
-					quast.py -o "$OUTDIR_QUAST" -t $QUAST_THREADS --reference "$QUAST_REFERENCE" "$CONTIGS_BEFORE" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$CONTIGS_BEFORE" \
 						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
 				else
-					quast.py -o "$OUTDIR_QUAST" -t $QUAST_THREADS "$CONTIGS_BEFORE" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$CONTIGS_BEFORE" \
 						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
 				fi
 
@@ -1434,7 +1409,7 @@ process_sample() {
 				LOG_FILE="$LOG_DIR/${SAMPLE}_checkm2_before.log"
 				DB_ARG="--database_path ${CHECKM2DB}/*.dmnd"
 
-				checkm2 predict --threads "$CHECKM2_THREADS" \
+				checkm2 predict --threads "$THREADS" \
 					$DB_ARG \
 					--input "$CONTIGS_BEFORE" \
 					--force \
@@ -1513,10 +1488,10 @@ process_sample() {
 				mkdir -p "$OUTDIR_QUAST"
 
 				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
-					quast.py -o "$OUTDIR_QUAST" -t $QUAST_THREADS --reference "$QUAST_REFERENCE" "$OUTFILTER" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$OUTFILTER" \
 						>"$LOG_DIR/${SAMPLE}_quast_after.log" 2>&1
 				else
-					quast.py -o "$OUTDIR_QUAST" -t $QUAST_THREADS "$OUTFILTER" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$OUTFILTER" \
 						>"$LOG_DIR/${SAMPLE}_quast_after.log" 2>&1
 				fi
 				QUASTA_EXIT=$?
@@ -1549,7 +1524,7 @@ process_sample() {
 				LOG_FILE="$LOG_DIR/${SAMPLE}_checkm2_after.log"
 				DB_ARG="--database_path ${CHECKM2DB}/*.dmnd"
 
-				checkm2 predict --threads "$CHECKM2_THREADS" \
+				checkm2 predict --threads "$THREADS" \
 					$DB_ARG \
 					--input "$OUTFILTER" \
 					--force \
@@ -1589,7 +1564,7 @@ process_sample() {
                 conda activate qassfilt_kraken2 >/dev/null 2>&1 || true
                 kraken2 \
                 --db "$KRAKEN2_DB_PATH" \
-                --threads "$KRAKEN2_THREADS" \
+                --threads "$THREADS" \
                 --output "$KRAKEN2_BEFORE_OUT" \
                 --report "$KRAKEN2_BEFORE_REPORT" \
                 --use-names \
@@ -1614,7 +1589,7 @@ process_sample() {
                 conda activate qassfilt_kraken2 >/dev/null 2>&1 || true
                 kraken2 \
                 --db "$KRAKEN2_DB_PATH" \
-                --threads "$KRAKEN2_THREADS" \
+                --threads "$THREADS" \
                 --output "$KRAKEN2_AFTER_OUT" \
                 --report "$KRAKEN2_AFTER_REPORT" \
                 --use-names \
@@ -1642,7 +1617,7 @@ if [[ $CORES_ALLOWED -lt 1 ]]; then CORES_ALLOWED=1; fi
 
 # threads to allocate to each process_sample invocation
 # choose based on how heavy each job is (example: 4 or 8). Adjust to taste.
-THREADS_PER_JOB=${THREADS_PER_JOB:-$COMPETITIVE_THREADS}
+THREADS_PER_JOB=${THREADS_PER_JOB:-$THREADS}
 
 # compute how many concurrent jobs we should run
 MAX_JOBS=$(( CORES_ALLOWED / THREADS_PER_JOB ))
@@ -1657,46 +1632,76 @@ get_free_mem_mb() {
 }
 
 for SAMPLE in "${SAMPLES[@]}"; do
-    if [[ $CONTIG_MODE -eq 1 ]]; then
+
+    # ----------------------------------------------------
+    # NEW RULE: If both CONTIG_MODE and COMPETITIVE_MODE = 1
+    # Use COMPETITIVE_MODE logic but force R1="" R2=""
+    # ----------------------------------------------------
+    if [[ $CONTIG_MODE -eq 1 && $COMPETITIVE_MODE -eq 1 ]]; then
         R1=""
         R2=""
-        echo "CONTIG: $SAMPLE"
-        process_sample "$SAMPLE" "$R1" "$R2"
-    elif [[ $COMPETITIVE_MODE -eq 1 ]]; then
-        R1="${PAIRS["$SAMPLE,1"]:-}"
-        R2="${PAIRS["$SAMPLE,2"]:-}"
+        echo "BOTH MODES: Using COMPETITIVE_MODE with empty reads for $SAMPLE"
 
-        # Wait for resources: job slots and memory
         while :; do
             RUNNING_JOBS=$(jobs -r -p | wc -l)
             FREE_MEM_MB=$(get_free_mem_mb)
-
-            # Check that we have job slot AND memory slot
             if (( RUNNING_JOBS < MAX_JOBS && FREE_MEM_MB > MIN_FREE_MEM_MB )); then
                 break
             fi
             sleep 1
         done
 
-        # Export thread environment variables so tools that respect them will limit threads
         export OMP_NUM_THREADS="$THREADS_PER_JOB"
         export MKL_NUM_THREADS="$THREADS_PER_JOB"
         export OPENBLAS_NUM_THREADS="$THREADS_PER_JOB"
 
-        # If your process_sample accepts a threads argument, pass it:
-        # e.g. process_sample <sample> <r1> <r2> --threads "$THREADS_PER_JOB"
-        # I'll call it with an environment variable THREADS set; adapt inside process_sample if needed.
         THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2" &
+        sleep 0.5
+        continue
+    fi
 
-        # optional: small sleep to avoid starting many at the exact same time
+    # ----------------------------------------------------
+    # Normal CONTIG MODE
+    # ----------------------------------------------------
+    if [[ $CONTIG_MODE -eq 1 ]]; then
+        R1=""
+        R2=""
+        echo "CONTIG: $SAMPLE"
+        process_sample "$SAMPLE" "$R1" "$R2"
+    
+    # ----------------------------------------------------
+    # Normal COMPETITIVE MODE
+    # ----------------------------------------------------
+    elif [[ $COMPETITIVE_MODE -eq 1 ]]; then
+        R1="${PAIRS["$SAMPLE,1"]:-}"
+        R2="${PAIRS["$SAMPLE,2"]:-}"
+
+        while :; do
+            RUNNING_JOBS=$(jobs -r -p | wc -l)
+            FREE_MEM_MB=$(get_free_mem_mb)
+            if (( RUNNING_JOBS < MAX_JOBS && FREE_MEM_MB > MIN_FREE_MEM_MB )); then
+                break
+            fi
+            sleep 1
+        done
+
+        export OMP_NUM_THREADS="$THREADS_PER_JOB"
+        export MKL_NUM_THREADS="$THREADS_PER_JOB"
+        export OPENBLAS_NUM_THREADS="$THREADS_PER_JOB"
+
+        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2" &
         sleep 0.5
 
+    # ----------------------------------------------------
+    # SEQUENTIAL MODE
+    # ----------------------------------------------------
     else
         R1="${PAIRS["$SAMPLE,1"]:-}"
         R2="${PAIRS["$SAMPLE,2"]:-}"
         echo "SEQUENTIAL: $SAMPLE"
         process_sample "$SAMPLE" "$R1" "$R2"
     fi
+
 done
 
 wait
