@@ -139,5 +139,5 @@ exec tini -- qassfilt "$@"
 %help
     This container contains QAssfilt with BOHRA-style Conda environment handling.
     Usage:
-        apptainer run --cleanenv --bind /srv:/srv qassfilt.sif --help
-        apptainer run --cleanenv --bind /srv:/srv qassfilt.sif -i input -o output
+        apptainer run --bind /srv:/srv /path/qassfilt.sif --help
+        apptainer run --bind /srv:/srv /path/qassfilt.sif -i input_path -o output_path
