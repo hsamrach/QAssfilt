@@ -61,7 +61,7 @@ echo "=== Updating conda ==="
 conda update -n base -c defaults -y conda
 
 echo "=== Installing QAssfilt from Conda ==="
-conda install -n base -c samrachhan11 -y qassfilt=1.2.7
+conda install -n base -c samrachhan11 -y qassfilt=1.2.8
 
 conda create -n qassfilt_abricate -y
 conda install -y -n qassfilt_abricate -c defaults -c bioconda -c conda-forge abricate=1.0.1
