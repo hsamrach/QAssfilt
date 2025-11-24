@@ -48,7 +48,7 @@ conda update -n base -c defaults -y conda
 # Install QAssfilt and sub-environments
 # ============================
 echo "=== Installing QAssfilt ==="
-conda install -n base -c samrachhan11 -y qassfilt=1.2.8
+conda install -n base -c samrachhan11 -y qassfilt=1.3.0
 
 # Sub-environments for tools
 conda create -n qassfilt_abricate -y
