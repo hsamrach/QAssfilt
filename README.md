@@ -289,11 +289,12 @@ QAssfilt uses the following dependency tools:
 - [ABRitAMR](https://github.com/MDU-PHL/abritamr)
 - [ABRicate](https://github.com/tseemann/abricate)
 - [MultiQC](https://github.com/MultiQC/MultiQC)
+If you are using any of them in this QAssfilt pipeline, please cite each one.
 # Information
 ## License
 QAssfilt is free for everyone, and released under [GPL (version 3)](https://github.com/hsamrach/QAssfilt/blob/main/LICENSE).
 ## Issues
-Any comments and suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
+Any comments or suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
 QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902) using nextflow, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
 
