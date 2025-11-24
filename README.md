@@ -304,5 +304,5 @@ Any comments or suggestions, please submit to the [Issues](https://github.com/hs
 QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902) using nextflow, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
 
 Special thanks to Sokleaph Cheng and Bertrand Guillard for their support.
-
+**Citation: Han S., Khan F., Guillard B., Cheng S., Rahi P. (2025). QAssfilt. GitHub: https://github.com/hsamrach/QAssfilt**
 **Resourced by Bacteriology And Antibiotic Resistance Group, Medical Biology Laboratory, Institut Pasteur du Cambodge.**
