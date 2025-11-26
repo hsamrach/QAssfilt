@@ -214,7 +214,7 @@ For example:
 64×0.9 = 57.6 ≈ 57 CPUs available for pipeline
 - Divided by threads (e.g, 8 CPUs)
 Number of samples that can run in parallel = 57​/8 ≈ 7 samples
-- Thus, 7 samples will run in parallel. As soon as one of these samples completes a step, the next sample in the queue will begin, ensuring efficient use of system resources.
+- Thus, 7 samples will run in parallel. As soon as one of these samples completes the last step (default: kraken2-a), the next sample in the queue will begin, ensuring efficient use of system resources.
 
 Note: once competitive mode is enabled, the workflow of GTDBTk, Abritamr, and Abricate will be changed to run GTDBTk-b/-a, abritamr-b, and abricate-b in parallel.
 ```
