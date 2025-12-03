@@ -21,8 +21,16 @@ set -eux
 apt-get update && apt-get install -y \
     wget git curl ca-certificates bzip2 bash bsdmainutils gawk sed grep \
     findutils coreutils bc parallel util-linux tar gzip build-essential \
-    procps unzip tini vim less \
+    procps unzip tini vim less locales \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# ============================
+# Set locale to prevent Perl warnings
+# ============================
+locale-gen en_US.UTF-8
+update-locale LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
 # ============================
 # Install Miniconda
@@ -110,6 +118,10 @@ unset _CE_CONDA
 unset CONDA_SHLVL
 unset CONDA_PROMPT_MODIFIER
 
+# Set locale
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 # Load Conda only in interactive shells to avoid 'local' errors
 if [[ $- == *i* ]] && [ -f /opt/miniconda3/etc/profile.d/conda.sh ]; then
     . /opt/miniconda3/etc/profile.d/conda.sh
@@ -140,4 +152,4 @@ exec tini -- qassfilt "$@"
     This container contains QAssfilt with BOHRA-style Conda environment handling.
     Usage:
         apptainer run --bind /srv:/srv /path/qassfilt.sif --help
-        apptainer run --bind /srv:/srv /path/qassfilt.sif -i input_path -o output_path
+        apptainer run --bind /srv:/srv /path/qassfilt.sif -i /path/input -o /path/output
