@@ -21,6 +21,10 @@ qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_datab
 # Users unsatisfied with the default options
 qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -cp -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -t 32 -mc 50 -ml 1000 --skip "FASTP"
 ```
+# Progressing status
+![Logo](status_streaming_041225.JPG)
+
+While running, QAssfilt will update the progression for the user to be trackable.
 # Installation
 ## Conda installation
 Before installing QAssfilt, you have to had conda installed in your terminal. If you are new to conda, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
