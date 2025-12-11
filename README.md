@@ -304,7 +304,7 @@ QAssfilt is free for everyone, and released under [GPL (version 3)](https://gith
 ## Issues
 Any comments or suggestions, please submit to the [Issues](https://github.com/hsamrach/QAssfilt/issues).
 ## Acknowledgement
-QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902) using nextflow, and fully re-built in advance using shell scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
+QAssfilt is built on the proposal and suggestion of [Praveen Rahi](https://github.com/RahiPraveen), initially built by [Furqan Khan](https://github.com/furqan8192902) using nextflow, and fully re-built in advance using bash scripts by [Samrach Han](https://github.com/hsamrach) with assistance from [ChatGPT](https://chatgpt.com/?model=auto).
 
 Special thanks to Sokleaph Cheng and Bertrand Guillard for their support.
 
