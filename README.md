@@ -300,6 +300,11 @@ If you are using any of them in this QAssfilt pipeline, please cite each one.
 # Container
 You will find qassfilt.def in the main, if you would like to build the container using Apptainer.
 
+For example:
+```
+apptainer build qassfilt.sif qassfilt.def
+```
+
 If you prefer to use the pre-built container, please let us know via these emails: hsamrach@pasteur-kh.org or hansamrach11@gmail.com
 # Information
 ## License
