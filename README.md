@@ -239,7 +239,8 @@ scaffold_12_cov_100.0
 contig001_depth_42.7
 NODE_2_length_23456_depth_88
 ```
-All headers contain 'cov' and 'depth', which can be used by this mechanism.
+Note: Each headers must be none spaces. Only headers contain 'cov' and 'depth' are able to use this mechanism.
+
 ##### --filter_min_length, -ml
 This will only pick up the contigs that have length (bp) greater than the number you specify to generate filtered contig files. This mechanism can be applied to all types of contig files since it counts the length (bp) of each contig directly.
 ##### --skip
