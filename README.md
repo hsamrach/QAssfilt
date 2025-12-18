@@ -223,6 +223,8 @@ Number of samples that can run in parallel = 57​/8 ≈ 7 samples
 **Note:** once competitive mode is enabled, the workflow of GTDBTk, Abritamr, and Abricate will be changed to run GTDBTk-b/-a, abritamr-b, and abricate-b in parallel.
 ##### --checkm2_db_path, -cd
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
+
+Note: please store only one (.dmnd) file in the database directory.
 ##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
 By default, these tools were skipped. Once they are triggered, the workflow will include them.
 
