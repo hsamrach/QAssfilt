@@ -69,9 +69,11 @@ chmod +x qassfilt.sh
 Usage: qassfilt -i ~/dir -o ~/dir [options]
 
   --initial, -ini                       Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)
+  --source_conda, -sc [dir]             Path to source conda environment (optional; if not given, pipeline will use default)
+                                        e.g.: --source_conda, -sc /home/user/miniconda3/
   --input_path, -i [dir]                Path to directory containing fastq file (Apply for all Illumina paired end reads)
   --contigs, -cg                        Enable contig mode (flag option)
-                                        This will scan for fasta (.fa .fasta .fas .fna) in input_path
+                                        This will scan for fasta (.fa .fasta .fas .fna .ffn) in input_path
   --competitive, -cp                    Enable competitive mode (flag option)
   --output_path, -o [dir]               Path to output directory
   --input_dir_depth, -id [N]            Define directories to be scanned for fastq file (default: 1)
@@ -188,15 +190,7 @@ output_dir/
 |   |
 │   └── after: abritamr output after filtering.
 |
-├── multiqc_reports/
-|   |
-│   ├── fastp: An HTML file for viewing the report from fastp.
-|   |
-│   └── Assembly_qc: An HTML file for viewing the report from Quast and CheckM2, including before and after filtering.
-|   |
-│   ├── kraken2: An HTML file for viewing the report from kraken2.
-|   |
-│   └── gtdbtk: An HTML file for viewing the report from gtdbtk.
+├── multiqc_reports: HTML file of each tool's output except abricate and abritamr.
 │
 ├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
 |
