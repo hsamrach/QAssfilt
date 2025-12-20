@@ -108,6 +108,7 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "  --initial, -ini            		Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)"
             echo "  --source_conda, -sc [dir]      	Path to source conda environment (optional; if not given, pipeline will use default)"
+            echo "                                        e.g.: --source_conda, -sc /home/user/miniconda3/"
             echo "  --input_path, -i [dir]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
             echo "  --contigs, -cg            		Enable contig mode (flag option)"
             echo "                             		This will scan for fasta (.fa .fasta .fas .fna .ffn) in input_path"
