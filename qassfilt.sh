@@ -4,6 +4,7 @@
 
 # Search for conda.sh in common locations
 for d in \
+    $SOURCE_CONDA \
     /opt/miniconda* \
     /opt/anaconda* \
     /opt/miniforge* \
@@ -38,6 +39,7 @@ set -eo pipefail
 # =========================
 # CONFIGURATION WITH DEFAULTS
 # =========================
+SOURCE_CONDA=""
 INPUT_PATH=""
 OUTPUT_PATH=""
 INPUT_DIR_DEPTH=1
@@ -50,7 +52,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.0
+VERSION_QAssfilt=1.3.1
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -76,6 +78,7 @@ START_TIME=$(date +%s)
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --initial|-ini) INIT_MODE="1"; shift  ;;
+        --source_conda|-sc) SOURCE_CONDA="$2"; shift 2 ;;
         --input_path|-i) INPUT_PATH="$2"; shift 2 ;;
         --contigs|-cg) CONTIG_MODE="1"; shift  ;;
         --competitive|-cp) COMPETITIVE_MODE="1"; shift ;;
@@ -104,9 +107,10 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: qassfilt -i ~/dir -o ~/dir [options]"
             echo ""
             echo "  --initial, -ini            		Initialize QAssfilt, including checking and installing environments and tools (obligated for the first time)"
+            echo "  --source_conda, -sc [dir]      	Path to source conda environment (optional; if not given, pipeline will use default)"
             echo "  --input_path, -i [dir]          	Path to directory containing fastq file (Apply for all Illumina paired end reads)"
             echo "  --contigs, -cg            		Enable contig mode (flag option)"
-            echo "                             		This will scan for fasta (.fa .fasta .fas .fna) in input_path"
+            echo "                             		This will scan for fasta (.fa .fasta .fas .fna .ffn) in input_path"
             echo "  --competitive, -cp           		Enable competitive mode (flag option)"
             echo "  --output_path, -o [dir]         	Path to output directory"
             echo "  --input_dir_depth, -id [N]    	Define directories to be scanned for fastq file (default: $INPUT_DIR_DEPTH)"
@@ -880,6 +884,7 @@ fi
 # =========================
 print_intro() {
     echo "You have specified the following options:"
+    echo "    SOURCE_CONDA          = $SOURCE_CONDA"
     echo "    INPUT_PATH            = $(realpath -m "$INPUT_PATH")"
     echo "    CONTIG_MODE           = ${CONTIG_MODE_DISPLAY}"
     echo "    COMPETITIVE_MODE      = ${COMPETITIVE_MODE_DISPLAY}"
@@ -1012,6 +1017,7 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
 	echo -e "QAssfilt Pipeline Progressing..."  # Print the static part
 	echo -e "------------------------------------------------"
 	echo -e "Options specified"
+    echo -e "  SOURCE_CONDA        : $SOURCE_CONDA"
     echo -e "  INPUT_PATH          : $(realpath -m "$INPUT_PATH")"
     echo -e "  INPUT_DIR_DEPTH     : ${CYAN}$INPUT_DIR_DEPTH${RESET}"
     echo -e "  OUTPUT_PATH         : $(realpath -m "$OUTPUT_PATH")"
@@ -1156,13 +1162,27 @@ SAMPLES=()  # Initialize empty sample list
 
 if [[ $CONTIG_MODE -eq 1 ]]; then
     echo "[INFO] Running in contig mode (--contigs): scanning for fasta files in $INPUT_PATH"
+
     declare -A CONTIG_PATHS
+    CONTIG_BEFORE_DIR="${OUTPUT_PATH}/contigs_before"
+
+    mkdir -p "$CONTIG_BEFORE_DIR"
+
     while IFS= read -r -d '' FILE; do
-        SAMPLE=$(basename "$FILE")
-        SAMPLE=${SAMPLE%%.*}  # Remove extension
+        BASENAME=$(basename "$FILE")
+        SAMPLE="${BASENAME%%.*}"
+
         SAMPLES+=("$SAMPLE")
         CONTIG_PATHS["$SAMPLE"]="$FILE"
-    done < <(find "$INPUT_PATH" -maxdepth $INPUT_DIR_DEPTH -type f \( -iname "*.fa" -o -iname "*.fasta" -o -iname "*.fna" -o -iname "*.fas" \) -print0)
+
+        # Keep original filename to avoid collisions
+        cp -f -- "$(realpath "$FILE")" "$CONTIG_BEFORE_DIR/$BASENAME"
+
+    done < <(
+        find "$INPUT_PATH" -maxdepth "$INPUT_DIR_DEPTH" -type f \
+            \( -iname "*.fa" -o -iname "*.fasta" -o -iname "*.fna" -o -iname "*.fas" -o -iname "*.ffn" \) \
+            -print0
+    )
 
 else
     # =========================
@@ -1372,10 +1392,10 @@ process_sample() {
 				mkdir -p "$OUTDIR_QUAST"
 
 				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$CONTIGS_BEFORE" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$CONTIGS_BEFORE" --min-contig 1 \
 						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
 				else
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$CONTIGS_BEFORE" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$CONTIGS_BEFORE" --min-contig 1 \
 						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
 				fi
 
@@ -1488,10 +1508,10 @@ process_sample() {
 				mkdir -p "$OUTDIR_QUAST"
 
 				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$OUTFILTER" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$OUTFILTER" --min-contig 1 \
 						>"$LOG_DIR/${SAMPLE}_quast_after.log" 2>&1
 				else
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$OUTFILTER" \
+					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$OUTFILTER" --min-contig 1 \
 						>"$LOG_DIR/${SAMPLE}_quast_after.log" 2>&1
 				fi
 				QUASTA_EXIT=$?
@@ -1830,28 +1850,28 @@ wrap_if_competitive run_abritamr << 'EOF'
 # 10. ABRITAMR
 # =========================
 if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
+
     OUTPUT_PATH="$(realpath -m "$OUTPUT_PATH")"
     ABRITAMRLOG="${OUTPUT_PATH}/logs/abritamr.log"
+
     mkdir -p "$(dirname "$ABRITAMRLOG")"
-    mkdir -p "${OUTPUT_PATH}/abritamr/"
+    mkdir -p "${OUTPUT_PATH}/abritamr"
 
-    # --- Run on CONTIGS_BEFORE ---
-    CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/"
+    CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before"
     ABRITAMR_BEFORE_OUT="${OUTPUT_PATH}/abritamr/before"
-
 
     if is_skipped "ABRITAMR-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRITAMR-b" "SKIPPED"
         done
-    elif [[ -d "$CONTIGS_BEFORE" && $(find "$CONTIGS_BEFORE" -name '*.fasta' | wc -l) -gt 0 ]]; then
+    elif [[ -d "$CONTIGS_BEFORE" && $(find "$CONTIGS_BEFORE" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-b" || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-b" "RUNNING"
                 mkdir -p "$ABRITAMR_BEFORE_OUT"
             conda activate qassfilt_abritamr >/dev/null 2>&1 || true
 
             # Create .tab mapping file
-            find "$CONTIGS_BEFORE" -type f -name "*.fasta" | awk -F/ '{
+            find "$CONTIGS_BEFORE" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
                 file=$NF; sub(/\.[^.]+$/, "", file);
                 print file "\t" $0
             }' > "${ABRITAMR_BEFORE_OUT}/abritamr_list_before.tab"
@@ -1875,6 +1895,7 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
 
             conda deactivate >/dev/null 2>&1 || true
         fi
+
     else
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRITAMR-b" "SKIPPED"
@@ -1889,14 +1910,14 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRITAMR-a" "SKIPPED"
         done
-    elif [[ -d "$OUTFILTER" && $(find "$OUTFILTER" -name '*.fasta' | wc -l) -gt 0 ]]; then
+    elif [[ -d "$OUTFILTER" && $(find "$OUTFILTER" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-a" || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-a" "RUNNING"
                 mkdir -p "$ABRITAMR_AFTER_OUT"
             conda activate qassfilt_abritamr >/dev/null 2>&1 || true
 
             # Create .tab mapping file
-            find "$OUTFILTER" -type f -name "*.fasta" | awk -F/ '{
+            find "$OUTFILTER" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
                 file=$NF; sub(/\.[^.]+$/, "", file);
                 print file "\t" $0
             }' > "${ABRITAMR_AFTER_OUT}/abritamr_list_after.tab"
@@ -1937,7 +1958,7 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
     mkdir -p "${OUTPUT_PATH}/abricate/"
 
     # --- Run on CONTIGS_BEFORE ---
-    CONTIGS_BEFORE=( "${OUTPUT_PATH}/contigs_before/"*.fasta )
+    shopt -s nullglob; CONTIGS_BEFORE=( "$OUTPUT_PATH/contigs_before/"*.fa "$OUTPUT_PATH/contigs_before/"*.fna "$OUTPUT_PATH/contigs_before/"*.fasta "$OUTPUT_PATH/contigs_before/"*.fas "$OUTPUT_PATH/contigs_before/"*.ffn ); shopt -u nullglob
     ABRICATE_BEFORE_PREFIX="${OUTPUT_PATH}/abricate/before"
 
     if is_skipped "ABRICATE-b"; then
@@ -1982,7 +2003,7 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
     fi
 
     # --- Run on OUTFILTER ---
-    OUTFILTER=( "${OUTPUT_PATH}/contigs_filtered/"*.fasta )
+    shopt -s nullglob; OUTFILTER=( "${OUTPUT_PATH}/contigs_filtered/"*.fa "${OUTPUT_PATH}/contigs_filtered/"*.fna "${OUTPUT_PATH}/contigs_filtered/"*.fasta "${OUTPUT_PATH}/contigs_filtered/"*.fas "${OUTPUT_PATH}/contigs_filtered/"*.ffn ); shopt -u nullglob
     ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/abricate/after"
 
     if is_skipped "ABRICATE-a"; then
@@ -2103,7 +2124,7 @@ fi
 
 			# --- Fastp MultiQC ---
 			if [[ -d "${OUTPUT_PATH}/fastp_file" ]]; then
-				mkdir -p "${OUTPUT_PATH}/multiqc_reports/fastp"
+				mkdir -p "${OUTPUT_PATH}/multiqc_reports"
 
 				# Path to MultiQC config
 				FASTP_CONFIG="${OUTPUT_PATH}/multiqc_fastp_config.yaml"
@@ -2157,7 +2178,7 @@ custom_data:
 EOF
 
         multiqc "${OUTPUT_PATH}/fastp_file" \
-            -o "${OUTPUT_PATH}/multiqc_reports/fastp" \
+            -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt Fastp Quality Report" \
             -c "$FASTP_CONFIG" \
             --force \
@@ -2175,9 +2196,9 @@ EOF
     [[ -d "${OUTPUT_PATH}/checkm2_after" ]]  && QC_DIRS+=("${OUTPUT_PATH}/checkm2_after")
 
     if [[ ${#QC_DIRS[@]} -gt 0 ]]; then
-        mkdir -p "${OUTPUT_PATH}/multiqc_reports/Assembly_qc"
+        mkdir -p "${OUTPUT_PATH}/multiqc_reports"
         multiqc "${QC_DIRS[@]}" \
-            -o "${OUTPUT_PATH}/multiqc_reports/Assembly_qc" \
+            -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt Assembly Quality Report (QUAST + CheckM2)" \
             --force \
             >>"$LOG_FILE" 2>&1
@@ -2186,9 +2207,9 @@ EOF
 
     # --- Kraken2 MultiQC ---
     if [[ -d "${OUTPUT_PATH}/kraken2" ]]; then
-        mkdir -p "${OUTPUT_PATH}/multiqc_reports/kraken2"
+        mkdir -p "${OUTPUT_PATH}/multiqc_reports"
         multiqc "${OUTPUT_PATH}/kraken2" \
-            -o "${OUTPUT_PATH}/multiqc_reports/kraken2" \
+            -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt Kraken2 Report" \
             --force \
             >>"$LOG_FILE" 2>&1
@@ -2197,9 +2218,9 @@ EOF
 
     # --- GTDB-Tk MultiQC ---
     if [[ -d "${OUTPUT_PATH}/gtdbtk" ]]; then
-        mkdir -p "${OUTPUT_PATH}/multiqc_reports/gtdbtk"
+        mkdir -p "${OUTPUT_PATH}/multiqc_reports"
         multiqc "${OUTPUT_PATH}/gtdbtk" \
-            -o "${OUTPUT_PATH}/multiqc_reports/gtdbtk" \
+            -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt GTDB-Tk Report" \
             --force \
             >>"$LOG_FILE" 2>&1
@@ -2225,6 +2246,30 @@ EOF
     fi
 fi
 
+ABR_DIR="$OUTPUT_PATH/abritamr"
+
+if [[ -d "$ABR_DIR" ]]; then
+    for sub in before after; do
+        if [[ -d "$ABR_DIR/$sub" ]]; then
+            find "$ABR_DIR/$sub" -mindepth 1 -maxdepth 1 -type d -exec rm -rf -- {} +
+        fi
+    done
+fi
+
+MQC_DIR="$OUTPUT_PATH/multiqc_reports"
+
+if [[ -d "$MQC_DIR" ]]; then
+    find "$MQC_DIR" \
+        -mindepth 1 -maxdepth 1 \
+        -type d \
+        -exec rm -rf -- {} +
+fi
+
+if [[ $CONTIG_MODE -eq 1 ]]; then
+    rm -rf "${OUTPUT_PATH}/contigs_before"
+fi
+
+
 # =========================
 # END TIMER + FINAL STATUS
 # =========================
@@ -2243,4 +2288,4 @@ echo "               QAssfilt Pipeline completed!"
 echo ""
 printf "%-18s : %s\n" "Please find the output here"              "$(realpath -m "$OUTPUT_PATH")"
 echo ""
-echo "All rights reserved. © 2025 QAssfilt, Samrach Han"
+echo "All rights reserved. © 2025 QAssfilt v${VERSION_QAssfilt}, Samrach Han" | tee -a $PARAM_LOG
