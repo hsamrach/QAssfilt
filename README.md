@@ -6,7 +6,7 @@ QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis (credited to [bohra](https://github.com/MDU-PHL/bohra)). Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer, and also build their own container, if highly reproducible is preferred.
 # QAssfilt workflow
-![Logo](QAssfilt_workflow_v3.jpg)
+![Logo](QAssfilt_Pipeline_Workflow.png)
 # Quick guide
 Initialization is needed after installing QAssfilt. Please see [Initialization](https://github.com/hsamrach/QAssfilt#initialization) section.
 ```
@@ -169,36 +169,56 @@ output_dir/
 ├── contigs_filtered: filtered contig files of each sample ID.
 |
 ├── quast_before: Quast output from unfiltered contig files.
-|
 ├── quast_after: Quast output from filtered contig files.
 |
 ├── checkm2_before: CheckM2 output from unfiltered contig files.
-|
 ├── checkm2_after: CheckM2 output from filtered contig files.
 |
 ├── kraken2: kraken2 output from filtered contig files. (before and after)
 |
 ├── gtdbtk:
 │   ├── before: GTDB-TK output before filtering.
-|   |
 │   └── after: GTDB-TK output after filtering.
 |
 ├── abricate: the output of the abricate run in all available databases. (before and after)
 |
 ├── abritamr:
 │   ├── before: abritamr output before filtering.
-|   |
 │   └── after: abritamr output after filtering.
 |
-├── multiqc_reports: HTML file of each tool's output except abricate and abritamr.
+├── multiqc_reports: HTML reports of each tool.
+│   ├── QAssfilt_Fastp_Report_multiqc_report.html
+│   └── QAssfilt_QUAST_CheckM2_Report_multiqc_report.html
+│   └── QAssfilt_GTDB-Tk_Kraken2_Report_multiqc_report.html
+│   └── QAssfilt_Abricate_Report.html
+│   └── QAssfilt_abritAMR_Report.html
 │
 ├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
 |
-└── pipeline_parameters.txt: Options and parameters used in pipeline.
+└── pipeline_parameters.txt: Options, parameters, time consumed, and version used in pipeline.
 ```
-For fastp, quast, checkm2, kraken2, and gtdbtk, the output could be viewed in multiqc_reports.
-For abritamr and abricate, the output could be viewed in their own directory.
 ## Options and Parameters
+##### --source_conda, -sc
+Somehow, the user might have various conda installations on their server (e.g, anaconda, miniconda3, etc.). Therefore, we provided this option to particular use one of their conda as they wished. No need to specify if you have only one conda on your server. (QAssfilt will automatically used it)
+
+By default, it will scan for conda.sh automatically via the paths below:
+```
+    /opt/miniconda* \
+    /opt/anaconda* \
+    /opt/miniforge* \
+    /opt/mambaforge \
+    /opt/conda \
+    $HOME/miniconda* \
+    $HOME/anaconda* \
+    $HOME/conda \
+    $HOME/miniforge* \
+    $HOME/mambaforge \
+    /usr/local/miniconda* \
+    /usr/local/anaconda* \
+    /usr/local/miniforge* \
+    /usr/local/mambaforge \
+    /usr/local/conda
+```
 ##### --contigs, -cg (Contigs_Mode)
 Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. (default: disable)
 ##### --competitive, -cp (Competitive_Mode)
