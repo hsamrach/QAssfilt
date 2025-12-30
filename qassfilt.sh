@@ -52,7 +52,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.1
+VERSION_QAssfilt=1.3.2
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -1599,8 +1599,8 @@ process_sample() {
             fi
 
             # --- Run on OUTFILTER ---
-            local KRAKEN2_AFTER_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}_after.output"
-            local KRAKEN2_AFTER_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}_after.report"
+            local KRAKEN2_AFTER_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}_filtered.output"
+            local KRAKEN2_AFTER_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}_filtered.report"
 
             if is_skipped "KRAKEN2-a"; then
             update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
@@ -1758,8 +1758,9 @@ $body
 
         wrap_if_competitive run_gtdbtk_before << 'EOF'
             # --- Run on CONTIGS_BEFORE ---
-            CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/"
+            CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before"
             GTDBTK_BEFORE_DIR="${OUTPUT_PATH}/gtdbtk/before"
+            mkdir -p "$GTDBTK_BEFORE_DIR"
             if is_skipped "GTDBTK-b"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
                     update_status "$SAMPLE" "GTDBTK-b" "SKIPPED"
@@ -1768,11 +1769,21 @@ $body
             if should_run_step "$SAMPLE" "GTDBTK-b" || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.classify.tree.1.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.backbone.bac120.classify.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.summary.tsv" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.tree.mapping.tsv" ]]; then
                 update_status "$SAMPLE" "GTDBTK-b" "RUNNING"
                 conda activate qassfilt_gtdbtk >/dev/null 2>&1 || true
+
+            find "$CONTIGS_BEFORE" -type f \
+            \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" \) |
+            awk '{
+            path=$0
+            file=$0
+            sub(/^.*\//, "", file)
+            sub(/\.[^.]+$/, "", file)
+            print path "\t" file
+            }' > "${GTDBTK_BEFORE_DIR}/gtdbtk_batch_before.tab"
+
                 gtdbtk classify_wf \
-                --genome_dir "$CONTIGS_BEFORE" \
+                --batchfile "${GTDBTK_BEFORE_DIR}/gtdbtk_batch_before.tab" \
                 --out_dir "$GTDBTK_BEFORE_DIR" \
                 --cpus "$GTDBTK_THREADS" \
-                --extension fasta \
                 --force \
                 --skip_ani_screen \
                 --pplacer_cpus "$GTDBTK_THREADS" \
@@ -1804,6 +1815,7 @@ EOF
             # --- Run on OUTFILTER ---
             OUTFILTER="${OUTPUT_PATH}/contigs_filtered/"
             GTDBTK_AFTER_DIR="${OUTPUT_PATH}/gtdbtk/after"
+            mkdir -p "$GTDBTK_AFTER_DIR"
             if is_skipped "GTDBTK-a"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
                     update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
@@ -1967,7 +1979,7 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
             update_status "$SAMPLE" "ABRICATE-b" "SKIPPED"
         done
     elif (( ${#CONTIGS_BEFORE[@]} > 0 )); then
-        if should_run_step "$SAMPLE" "ABRICATE-b" || [[ ! -s "${OUTPUT_PATH}/abricate/before_plasmidfinder.summary.tsv" ]]; then
+        if should_run_step "$SAMPLE" "ABRICATE-b" || [[ ! -s "${OUTPUT_PATH}/abricate/before_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/before_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-b" "RUNNING"
             conda activate qassfilt_abricate >/dev/null 2>&1 || true
 
@@ -2005,14 +2017,14 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
 
     # --- Run on OUTFILTER ---
     shopt -s nullglob; OUTFILTER=( "${OUTPUT_PATH}/contigs_filtered/"*.fa "${OUTPUT_PATH}/contigs_filtered/"*.fna "${OUTPUT_PATH}/contigs_filtered/"*.fasta "${OUTPUT_PATH}/contigs_filtered/"*.fas "${OUTPUT_PATH}/contigs_filtered/"*.ffn ); shopt -u nullglob
-    ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/abricate/after"
+    ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/abricate/filtered"
 
     if is_skipped "ABRICATE-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRICATE-a" "SKIPPED"
         done
     elif (( ${#OUTFILTER[@]} > 0 )); then
-        if should_run_step "$SAMPLE" "ABRICATE-a" || [[ ! -s "${OUTPUT_PATH}/abricate/after_plasmidfinder.summary.tsv" ]]; then
+        if should_run_step "$SAMPLE" "ABRICATE-a" || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-a" "RUNNING"
             conda activate qassfilt_abricate >/dev/null 2>&1 || true
 
@@ -2113,7 +2125,7 @@ fi
 			for SAMPLE in "${SAMPLES[@]}"; do
 				update_status "$SAMPLE" "MULTIQC" "SKIPPED"
 			done
-		elif should_run_step "$SAMPLE" "MULTIQC" || [[ ! -d "${OUTPUT_PATH}/multiqc_reports" ]]; then
+		elif should_run_step "$SAMPLE" "MULTIQC" || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_QUAST_CheckM2_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_GTDB-Tk_Kraken2_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Fastp_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Abricate_Report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_abritAMR_Report.html" ]]; then
 			update_status "$SAMPLE" "MULTIQC" "RUNNING"
 			conda activate qassfilt_multiqc
 
@@ -2180,11 +2192,11 @@ EOF
 
         multiqc "${OUTPUT_PATH}/fastp_file" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
-            --title "QAssfilt Fastp Quality Report" \
+            --title "QAssfilt_Fastp_Report" \
             -c "$FASTP_CONFIG" \
             --force \
             --module fastp \
-            >"$LOG_FILE" 2>&1
+            >>"$LOG_FILE" 2>&1
         rm -rf "$FASTP_CONFIG"  # clean up config file
         RUN_ANY=1
     fi
@@ -2200,33 +2212,466 @@ EOF
         mkdir -p "${OUTPUT_PATH}/multiqc_reports"
         multiqc "${QC_DIRS[@]}" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
-            --title "QAssfilt Assembly Quality Report (QUAST + CheckM2)" \
+            --title "QAssfilt_QUAST_CheckM2_Report" \
             --force \
             >>"$LOG_FILE" 2>&1
         RUN_ANY=1
     fi
 
-    # --- Kraken2 MultiQC ---
-    if [[ -d "${OUTPUT_PATH}/kraken2" ]]; then
+    # --- Combined Kraken2 + GTDB-Tk MultiQC ---
+    MULTIQC_INPUTS=()
+
+    [[ -d "${OUTPUT_PATH}/kraken2" ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/kraken2")
+    [[ -d "${OUTPUT_PATH}/gtdbtk"  ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/gtdbtk")
+
+    if (( ${#MULTIQC_INPUTS[@]} > 0 )); then
         mkdir -p "${OUTPUT_PATH}/multiqc_reports"
-        multiqc "${OUTPUT_PATH}/kraken2" \
+
+        multiqc "${MULTIQC_INPUTS[@]}" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
-            --title "QAssfilt Kraken2 Report" \
+            --title "QAssfilt_GTDB-Tk_Kraken2_Report" \
             --force \
             >>"$LOG_FILE" 2>&1
+
         RUN_ANY=1
     fi
 
-    # --- GTDB-Tk MultiQC ---
-    if [[ -d "${OUTPUT_PATH}/gtdbtk" ]]; then
-        mkdir -p "${OUTPUT_PATH}/multiqc_reports"
-        multiqc "${OUTPUT_PATH}/gtdbtk" \
-            -o "${OUTPUT_PATH}/multiqc_reports" \
-            --title "QAssfilt GTDB-Tk Report" \
-            --force \
-            >>"$LOG_FILE" 2>&1
-        RUN_ANY=1
-    fi
+# --- Abricate MultiQC (Flat format - shows all data) ---
+if [[ -d "${OUTPUT_PATH}/abricate" ]]; then
+    mkdir -p "${OUTPUT_PATH}/multiqc_reports"
+    rm -f "${OUTPUT_PATH}/multiqc_reports/abricate_combined.tsv"
+    ABRICATE_COMBINED="${OUTPUT_PATH}/multiqc_reports/abricate_combined.tsv"
+    ABRICATE_HTML="${OUTPUT_PATH}/multiqc_reports/QAssfilt_Abricate_Report.html"
+
+# Process and combine TSV files
+shopt -s nullglob
+
+# First, collect all data into a temporary file
+TEMP_FILE=$(mktemp)
+
+for file in "${OUTPUT_PATH}/abricate/"*.tsv; do
+    [[ "$file" == *.summary.tsv ]] && continue
+
+    tail -n +2 "$file" | \
+    awk -F'\t' '{
+    # Extract basename from full path
+    split($1, a, "/")
+    sample = a[length(a)]
+    sub(/\.(fasta|fa|fna|ffn|faa|fas)$/, "", sample)
+
+    f1 = (sample != "" ? sample : "NA")
+    f6 = ($6 != "" ? $6 : "NA")
+    f12 = ($12 != "" ? $12 : "NA")
+    f15 = ($15 != "" ? $15 : "NA")
+
+    print f1 "\t" f6 "\t" f12 "\t" f15
+    }'
+done > "$TEMP_FILE"
+
+# Remove unwanted rows from the combined file
+awk -F'\t' '{
+    # $1 = sample/stage, $2 = FILE, $3 = GENE, $4 = db, $5 = RESISTANCE
+    if ($1 != "abricate" && $1 != "before" && $1 != "filtered" && !($4=="NA" && $3=="NA" && $5=="NA")) 
+        print
+}' "$TEMP_FILE" > "${TEMP_FILE}.cleaned"
+
+# Overwrite the original temp file with the cleaned one
+mv "${TEMP_FILE}.cleaned" "$TEMP_FILE"
+
+shopt -u nullglob
+
+# Combine rows with same Sample ID and Database
+ABRICATE_TMP=$(mktemp)
+
+python3 << PYTHON_SCRIPT > "$ABRICATE_TMP"
+from collections import defaultdict
+import sys
+
+data = defaultdict(lambda: {"genes": set(), "resistance": set()})
+
+with open("${TEMP_FILE}", "r") as f:
+    for line in f:
+        if line.strip():
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) >= 4:
+                sample, gene, database, resistance = parts[:4]
+                key = (sample, database)
+                data[key]["genes"].add(gene)
+                data[key]["resistance"].add(resistance)
+
+print("Sample\tDatabase\tGenes\tResistance")
+
+if not data:
+    sys.exit(0)
+
+for (sample, database), values in sorted(data.items()):
+    genes = "; ".join(sorted(values["genes"]))
+    resistance = "; ".join(sorted(values["resistance"]))
+    print(f"{sample}\t{database}\t{genes}\t{resistance}")
+PYTHON_SCRIPT
+
+# Atomically replace final file
+mv "$ABRICATE_TMP" "$ABRICATE_COMBINED"
+
+#HTML Report
+if [[ ! -s "$ABRICATE_COMBINED" ]]; then
+    echo "No data found. Skipping HTML report."
+else
+
+ABRICATE_COMBINED="$ABRICATE_COMBINED" \
+ABRICATE_HTML="$ABRICATE_HTML" \
+python3 << 'PYTHON_HTML'
+import pandas as pd
+import os
+from pathlib import Path
+
+# Load combined TSV
+input_file = os.environ["ABRICATE_COMBINED"]
+output_file = Path(os.environ["ABRICATE_HTML"])
+
+df = pd.read_csv(input_file, sep="\t")
+
+# HTML start
+html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QAssfilt abricate Report</title>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.6.2/css/colReorder.dataTables.min.css">
+<script src="https://cdn.datatables.net/colreorder/1.6.2/js/dataTables.colReorder.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/colresize/1.0.2/css/dataTables.colResize.min.css">
+<script src="https://cdn.datatables.net/colresize/1.0.2/js/dataTables.colResize.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/searchpanes/2.2.0/css/searchPanes.dataTables.min.css">
+<script src="https://cdn.datatables.net/searchpanes/2.2.0/js/dataTables.searchPanes.min.js"></script>
+<style>
+body {{ font-family: Arial, sans-serif; margin:20px; background:#f4f6f7; }}
+h1 {{ border-bottom:3px solid #16a085; }}
+</style>
+</head>
+<body>
+<h1>QAssfilt abricate Report</h1>
+
+<table id="table" class="display" style="width:100%">
+<thead>
+<tr>
+{''.join([f'<th>{c}</th>' for c in df.columns])}
+</tr>
+<tr>
+{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select><option value="">All</option></select></th>' for c in df.columns])}
+</tr>
+</thead>
+<tbody>
+"""
+
+# Table rows
+for _, row in df.iterrows():
+    html += "<tr>"
+    for c in df.columns:
+        val = "" if pd.isna(row[c]) else row[c]
+        html += f"<td>{val}</td>"
+    html += "</tr>"
+
+html += """
+</tbody>
+</table>
+
+<script>
+$(document).ready(function() {
+    var table = $('#table').DataTable({
+        pageLength: 25,
+        orderCellsTop: true,
+        colReorder: true, // draggable columns
+        colResize: true,
+        dom: "<'dt-buttons-container'B>rt<'length-container'l><'table-info'i><'pagination'p>",
+        buttons: [
+            'copyHtml5',
+            'csvHtml5',
+            'excelHtml5',
+            'pdfHtml5',
+            'print'
+        ],
+        colResize: true,  // Enable resizing
+        initComplete: function() {
+            var api = this.api();
+
+            api.columns().every(function(i) {
+                var column = this;
+                var header = $(column.header()).parent().next().children().eq(i);
+
+                var select = header.find('select');
+                column.data().unique().sort().each(function(d) {
+                    if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
+                });
+
+                select.on('change', function() {
+                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                    column.search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+
+                header.find('input').on('keyup change clear', function() {
+                    if(column.search() !== this.value) {
+                        column.search(this.value).draw();
+                    }
+                });
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
+"""
+
+output_file.write_text(html)
+PYTHON_HTML
+RUN_ANY=1
+fi
+fi
+
+# ===============================
+# ABRITAMR HTML reports
+# ===============================
+ABRITAMR_DIR="${OUTPUT_PATH}/abritamr"
+REPORT_DIR="${OUTPUT_PATH}/multiqc_reports"
+
+ABRITAMR_COMBINED="${REPORT_DIR}/abritamr_combined.tsv"
+ABRITAMR_HTML="${REPORT_DIR}/QAssfilt_abritAMR_Report.html"
+
+mkdir -p "$REPORT_DIR"
+rm -f "$ABRITAMR_COMBINED"
+
+# ===============================
+# COMBINE summary_matches.txt
+# ===============================
+
+FILE_BEFORE="${ABRITAMR_DIR}/before/summary_matches.txt"
+FILE_AFTER="${ABRITAMR_DIR}/after/summary_matches.txt"
+
+# =========================
+# CHECK INPUT FILES
+# =========================
+INPUT_FILES=()
+
+[[ -f "$FILE_BEFORE" ]] && INPUT_FILES+=("$FILE_BEFORE")
+[[ -f "$FILE_AFTER"  ]] && INPUT_FILES+=("$FILE_AFTER")
+
+# =========================
+# HANDLE NO INPUT FILES
+# =========================
+if [[ ! -s "$INPUT_FILES" ]]; then
+    echo "No data found. Skipping ABRITAMR consolidation."
+else
+    echo "[INFO] Merging ${#INPUT_FILES[@]} ABRITAMR summary files"
+
+# =========================
+# MERGE LOGIC
+# =========================
+awk -F'\t' '
+BEGIN {
+    OFS="\t"
+}
+
+# ---------- First file ----------
+NR == FNR {
+    if (FNR == 1) {
+        for (i = 1; i <= NF; i++) {
+            col[$i] = i
+            headers[i] = $i
+        }
+        maxcol = NF
+        next
+    }
+
+    sid = $1
+    samples[sid] = 1
+
+    for (i = 2; i <= NF; i++) {
+        data[sid, i] = $i
+    }
+    next
+}
+
+# ---------- Second (and later) files ----------
+FNR == 1 {
+    for (i = 1; i <= NF; i++) {
+        if (!($i in col)) {
+            col[$i] = ++maxcol
+            headers[maxcol] = $i
+        }
+        map[i] = col[$i]
+    }
+    next
+}
+
+{
+    sid = $1
+    samples[sid] = 1
+
+    for (i = 2; i <= NF; i++) {
+        c = map[i]
+
+        if ($i == "")
+            continue
+
+        if (data[sid, c] != "")
+            data[sid, c] = data[sid, c] ";" $i
+        else
+            data[sid, c] = $i
+    }
+}
+
+END {
+    # Print header
+    printf "%s", headers[1]
+    for (i = 2; i <= maxcol; i++)
+        printf OFS "%s", headers[i]
+    print ""
+
+    # Print rows (sorted by Sample ID)
+    n = asorti(samples, sorted_samples)
+    for (j = 1; j <= n; j++) {
+        sid = sorted_samples[j]
+        printf "%s", sid
+        for (i = 2; i <= maxcol; i++)
+            printf OFS "%s", data[sid, i]
+        print ""
+    }
+}
+' "${INPUT_FILES[@]}" > "$ABRITAMR_COMBINED"
+fi
+
+# ===============================
+# GENERATE INTERACTIVE HTML
+# ===============================
+if [[ ! -s "$ABRITAMR_COMBINED" ]]; then
+    echo "No data found. Skipping HTML report."
+else
+ABRITAMR_COMBINED="$ABRITAMR_COMBINED" \
+ABRITAMR_HTML="$ABRITAMR_HTML" \
+python3 << 'PYTHON_HTML'
+import pandas as pd
+import os
+from pathlib import Path
+
+# Load combined TSV
+input_file = os.environ["ABRITAMR_COMBINED"]
+output_file = Path(os.environ["ABRITAMR_HTML"])
+
+df = pd.read_csv(input_file, sep="\t")
+
+# HTML start
+html = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>QAssfilt abritAMR Report</title>
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.6.2/css/colReorder.dataTables.min.css">
+<script src="https://cdn.datatables.net/colreorder/1.6.2/js/dataTables.colReorder.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/colresize/1.0.2/css/dataTables.colResize.min.css">
+<script src="https://cdn.datatables.net/colresize/1.0.2/js/dataTables.colResize.min.js"></script>
+<style>
+body {{ font-family: Arial, sans-serif; margin:20px; background:#f4f6f7; }}
+h1 {{ border-bottom:3px solid #16a085; }}
+</style>
+</head>
+<body>
+<h1>QAssfilt abritAMR Report</h1>
+
+<table id="table" class="display" style="width:100%">
+<thead>
+<tr>
+{''.join([f'<th>{c}</th>' for c in df.columns])}
+</tr>
+<tr>
+{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select><option value="">All</option></select></th>' for c in df.columns])}
+</tr>
+</thead>
+<tbody>
+"""
+
+# Table rows
+for _, row in df.iterrows():
+    html += "<tr>"
+    for c in df.columns:
+        val = "" if pd.isna(row[c]) else row[c]
+        html += f"<td>{val}</td>"
+    html += "</tr>"
+
+html += """
+</tbody>
+</table>
+
+<script>
+$(document).ready(function() {
+    var table = $('#table').DataTable({
+        pageLength: 25,
+        orderCellsTop: true,
+        colReorder: true, // draggable columns
+        colResize: true,
+        dom: "<'dt-buttons-container'B>rt<'length-container'l><'table-info'i><'pagination'p>",
+        buttons: [
+            'copyHtml5',
+            'csvHtml5',
+            'excelHtml5',
+            'pdfHtml5',
+            'print'
+        ],
+        colResize: true,  // Enable resizing
+        initComplete: function() {
+            var api = this.api();
+
+            api.columns().every(function(i) {
+                var column = this;
+                var header = $(column.header()).parent().next().children().eq(i);
+
+                var select = header.find('select');
+                column.data().unique().sort().each(function(d) {
+                    if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
+                });
+
+                select.on('change', function() {
+                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
+                    column.search(val ? '^'+val+'$' : '', true, false).draw();
+                });
+
+                header.find('input').on('keyup change clear', function() {
+                    if(column.search() !== this.value) {
+                        column.search(this.value).draw();
+                    }
+                });
+            });
+        }
+    });
+});
+</script>
+</body>
+</html>
+"""
+
+output_file.write_text(html)
+PYTHON_HTML
+RUN_ANY=1
+fi
 
     MQ_EXIT=$?
     conda deactivate
@@ -2270,6 +2715,8 @@ if [[ $CONTIG_MODE -eq 1 ]]; then
     rm -rf "${OUTPUT_PATH}/contigs_before"
 fi
 
+rm -f "$OUTPUT_PATH/multiqc_reports/abritamr_combined.tsv"
+rm -f "$OUTPUT_PATH/multiqc_reports/abricate_combined.tsv"
 
 # =========================
 # END TIMER + FINAL STATUS
