@@ -224,7 +224,7 @@ Suppose you already have your assembled genome as contig files, but you would li
 ##### --competitive, -cp (Competitive_Mode)
 Competitive Mode is designed for emergency analyses, maximizing parallel sample processing while safeguarding system resources from overload.
 
-This mode works by automatically detecting available CPUs and calculating the optimal number of parallel sample runs—using up to 90% of total CPUs divided by the specified threads (default: 8)—and monitors RAM, waiting if available memory drops below 2GB to prevent overload and ensure system stability. 
+This mode works by automatically detecting available CPUs and calculating the optimal number of parallel sample runs—using up to 90% of total CPUs divided by the specified --threads, -t (default: 8) to prevent overload and ensure system stability.
 
 For example: 
 ```
