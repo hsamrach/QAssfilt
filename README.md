@@ -242,7 +242,15 @@ Note: please store only one (.dmnd) file in the database directory.
 ##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
 By default, these tools were skipped. Once they are triggered, the workflow will include them.
 
-Users have to had Kraken2 and GTDB-TK database downloaded to their own path. Please see the manual instructions for each tool.
+Users have to had Kraken2 and GTDB-TK database downloaded. Otherwise, you can download through the link below:
+```
+For [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk):
+wget https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
+
+For [Kraken2](https://github.com/DerrickWood/kraken2):
+Click this link and download your preferred pre-built kraken2 database: https://benlangmead.github.io/aws-indexes/k2
+Otherwise, you can build it yourself through the Kraken2 instruction.
+```
 ##### --filter_min_cov, -mc
 This will only pick up the contigs that have coverage greater than the number you specify to generate filtered contig files. Its mechanism is to extract contig headers and check the coverage number. So, if you use --contig, -cg, make sure your contig headers contain coverage information.
 For example:
