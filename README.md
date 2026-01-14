@@ -50,11 +50,13 @@ conda update -n base -c defaults conda
 ```
 Now you have your conda installed and activated via miniconda3.
 
+Note: You can also run the QAssfilt pipeline without activating Conda.
+
 The installation above is for Linux OS only. If you are using others, please find it via this link: https://repo.anaconda.com/miniconda and choose the one that suits you.
 ## QAssfilt installation
 Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
-conda install -n base -c samrachhan11 qassfilt=1.3.2 -y #latest version
+conda install -n base -c samrachhan11 qassfilt=1.3.3 -y #latest version
 qassfilt -h # to show help
 ```
 Otherwise, you could install QAssfilt through git clone also:
@@ -83,7 +85,7 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --kraken2_db_path, -kd [dir]          Providing path to KRAKEN2 database directory to enable kraken2 step (default: disable)
   --gtdbtk_db_path, -gd [dir]           Providing path to GTDBTK database directory to enable gtdbtk step (default: disable)
   --threads, -t [N]                     Number of threads for fastp, spades, quast, checkm2, and kraken2 (default: 8)
-  --gtdbtk_threads, -gt [N]             Number of threads for GTDBTK (default: 8)
+  --gtdbtk_threads, -gt [N]             Threads for GTDBTK (default: 8)
   --quast_reference, -qr [file]         Path to reference sequence for QUAST (optional)
   --filter_min_cov, -mc [N]             Minimum (≤) contig coverage to be filtered (default: 10)
   --filter_min_length, -ml [N]          Minimum (≤) contig length to be filtered (default: 500)
@@ -94,7 +96,7 @@ Usage: qassfilt -i ~/dir -o ~/dir [options]
   --fastp [string]                      Options/parameters to pass directly to fastp
                                         e.g.: "-q 30 -u 30 -e 15 -l 50 -5 -3, ..."
   --spades [string]                     Options/parameters to pass directly to SPAdes
-                                        e.g.: "--isolate --careful --cov-cutoff auto, ..."
+                                        e.g.: "-k 77 --isolate --careful --cov-cutoff auto, ..."
   --abricate [string]                   Options/parameters to pass directly to abricate, except "--db" to enable abricate step (default: disable)
                                         e.g.: Use at least an option to enable abricate "--minid 80, --mincov 80, --threads 8,..."
   --abritamr [string]                   Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)
@@ -187,9 +189,9 @@ output_dir/
 │   └── after: abritamr output after filtering.
 |
 ├── multiqc_reports: HTML reports of each tool.
-│   ├── QAssfilt_Fastp_Report_multiqc_report.html
-│   └── QAssfilt_QUAST_CheckM2_Report_multiqc_report.html
-│   └── QAssfilt_GTDB-Tk_Kraken2_Report_multiqc_report.html
+│   ├── QAssfilt_Fastp_MultiQC_Report.html
+│   └── QAssfilt_QUAST_CheckM2_MultiQC_Report.html
+│   └── QAssfilt_GTDB-Tk_Kraken2_MultiQC_Report.html
 │   └── QAssfilt_Abricate_Report.html
 │   └── QAssfilt_abritAMR_Report.html
 │
@@ -244,10 +246,10 @@ By default, these tools were skipped. Once they are triggered, the workflow will
 
 Users have to had Kraken2 and GTDB-TK database downloaded. Otherwise, you can download through the link below:
 ```
-For [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk):
+For [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk): Credit to GTDB-Tk
 wget https://data.ace.uq.edu.au/public/gtdb/data/releases/latest/auxillary_files/gtdbtk_package/full_package/gtdbtk_data.tar.gz
 
-For [Kraken2](https://github.com/DerrickWood/kraken2):
+For [Kraken2](https://github.com/DerrickWood/kraken2): Credit to Kraken2
 Click this link and download your preferred pre-built kraken2 database: https://benlangmead.github.io/aws-indexes/k2
 Otherwise, you can build it yourself through the Kraken2 instruction.
 ```
@@ -286,7 +288,7 @@ qassfilt -i /path/input_dir -o /path/output_dir --fastp "-q 30 -u 30"
 ##### --spades
 This option provides free access to the options and parameters of SPAdes (please see the SPAdes instructions: https://github.com/ablab/spades). For example:
 ```
-qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto"
+qassfilt -i /path/input_dir -o /path/output_dir --spades "--isolate --cov-cutoff auto -k 77"
 ```
 ##### --contigs_remove, -cr
 This option is specifically used when you know which contig names are contaminated or belong to unwanted pathogens. The kraken2 output in our pipeline also provides (.output) file that you could see which contig was the unwanted pathogen.
