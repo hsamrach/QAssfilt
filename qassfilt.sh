@@ -2,39 +2,21 @@
 
 #All rights reserved. © 2025 QAssfilt, Samrach Han
 
-# Search for conda.sh in common locations
-for d in \
-    $SOURCE_CONDA \
-    /opt/miniconda* \
-    /opt/anaconda* \
-    /opt/miniforge* \
-    /opt/mambaforge \
-    /opt/conda \
-    $HOME/miniconda* \
-    $HOME/anaconda* \
-    $HOME/conda \
-    $HOME/miniforge* \
-    $HOME/mambaforge \
-    /usr/local/miniconda* \
-    /usr/local/anaconda* \
-    /usr/local/miniforge* \
-    /usr/local/mambaforge \
-    /usr/local/conda
-do
-    if [ -f "$d/etc/profile.d/conda.sh" ]; then
-        source "$d/etc/profile.d/conda.sh"
-        found=1
-        break
-    fi
-done
-
-# If nothing was found
-if [ -z "$found" ]; then
-    echo "⚠️  Could not find conda.sh — please check your Conda installation."
-    exit 1
-fi
 
 set -eo pipefail
+
+cleanup() {
+
+    # Kill only child processes of this shell
+    pkill -TERM -P $$ 2>/dev/null
+
+    # Kill any remaining processes in my process group
+    kill -- -$$ 2>/dev/null
+
+    exit 130
+}
+# Now it's safe to set the trap
+trap cleanup SIGINT
 
 # =========================
 # CONFIGURATION WITH DEFAULTS
@@ -52,7 +34,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.2
+VERSION_QAssfilt=1.3.3
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -132,7 +114,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --fastp [string]                	Options/parameters to pass directly to fastp"
             echo "                             		e.g.: \"-q 30 -u 30 -e 15 -l 50 -5 -3, ...\""
             echo "  --spades [string]               	Options/parameters to pass directly to SPAdes"
-            echo "                             		e.g.: \"--isolate --careful --cov-cutoff auto, ...\""
+            echo "                             		e.g.: \"-k 77 --isolate --careful --cov-cutoff auto, ...\""
             echo "  --abricate [string]             	Options/parameters to pass directly to abricate, except \"--db\" to enable abricate step (default: disable)"
             echo "                             		e.g.: Use at least an option to enable abricate \"--minid 80, --mincov 80, --threads 8,...\""
             echo "  --abritamr [string]             	Options/parameters to pass directly to abritamr to enable abritamr step (default: disable)"
@@ -144,6 +126,38 @@ while [[ $# -gt 0 ]]; do
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
+
+# Search for conda.sh in common locations
+for d in \
+    $SOURCE_CONDA \
+    /opt/miniconda* \
+    /opt/anaconda* \
+    /opt/miniforge* \
+    /opt/mambaforge \
+    /opt/conda \
+    $HOME/miniconda* \
+    $HOME/anaconda* \
+    $HOME/conda \
+    $HOME/miniforge* \
+    $HOME/mambaforge \
+    /usr/local/miniconda* \
+    /usr/local/anaconda* \
+    /usr/local/miniforge* \
+    /usr/local/mambaforge \
+    /usr/local/conda
+do
+    if [ -f "$d/etc/profile.d/conda.sh" ]; then
+        source "$d/etc/profile.d/conda.sh"
+        found=1
+        break
+    fi
+done
+
+# If nothing was found
+if [ -z "$found" ]; then
+    echo "⚠️  Could not find conda.sh — please check your Conda installation."
+    exit 1
+fi
 
 # =========================
 # Process --skip options
@@ -333,9 +347,6 @@ mark_skipped_steps() {
 OUTPUT_PATH="${OUTPUT_PATH:-.}"
 mkdir -p "$OUTPUT_PATH"
 STATUS_FILE="${OUTPUT_PATH}/pipeline_status.tsv"
-
-# Now it's safe to set the trap
-trap cleanup SIGINT
 
 # =========================
 # SKIP STEP HELPER
@@ -611,11 +622,11 @@ check_envs_and_tools() {
                     echo "[INFO] Installing CheckM2 v${checkm2_version} in $ENV..."
 
                     # Activate the environment
-                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
 
                     conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda checkm2=${checkm2_version}
 
-                    conda deactivate
+                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 seqkit)
@@ -671,11 +682,11 @@ check_envs_and_tools() {
                     echo "[INFO] Installing ABRITAMR v${abritamr_version} in $ENV..."
 
                     # Activate the environment
-                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
 
                     conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda abritamr=${abritamr_version}
 
-                    conda deactivate
+                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 abricate)
@@ -683,11 +694,11 @@ check_envs_and_tools() {
                     echo "[INFO] Installing ABRicate v${abricate_version} in $ENV..."
 
                     # Activate the environment
-                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
 
                     conda install -y -n "$ENV" -c defaults -c bioconda -c conda-forge abricate=${abricate_version}
 
-                    conda deactivate
+                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 multiqc)
@@ -700,11 +711,11 @@ check_envs_and_tools() {
                     echo "[INFO] Installing Kraken2 v${kraken2_version} in $ENV..."
 
                     # Activate the environment
-                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
 
                     conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda kraken2=${kraken2_version}
 
-                    conda deactivate
+                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 gtdbtk)
@@ -712,11 +723,11 @@ check_envs_and_tools() {
                     echo "[INFO] Installing GTDB-Tk v${gtdbtk_version} in $ENV..."
 
                     # Activate the environment
-                    conda activate "$ENV" || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
 
                     conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11
 
-                    conda deactivate
+                    conda deactivate >/dev/null 2>&1 || true
                     ;;
             esac
             echo "✅ $TOOL installed in $ENV."
@@ -731,7 +742,7 @@ check_envs_and_tools() {
                 CHECKM2_DB="$HOME/databases/CheckM2_database"
                 mkdir -p "$CHECKM2_DB"
                 if [[ ! -d "$CHECKM2_DB" || -z "$(ls -A "$CHECKM2_DB")" ]]; then
-				conda activate qassfilt_checkm2
+                    conda activate qassfilt_checkm2 >/dev/null 2>&1 || conda activate qassfilt_checkm2 >/dev/null 2>&1 || { echo "❌ Failed to activate qassfilt_checkm2"; exit 1; }
                     echo "[WARN] CheckM2 DB not found, downloading..."
                     checkm2 database --download
                 else
@@ -742,7 +753,7 @@ check_envs_and_tools() {
             echo "🔗 Exported CHECKM2DB=$CHECKM2DB"
         fi
 
-        conda deactivate
+        conda deactivate >/dev/null 2>&1 || true
     done
 
     echo ""
@@ -1050,6 +1061,7 @@ if [[ -t 1 && "$STATUS" == "RUNNING" ]]; then
     echo -e "  SPADES_EXTRA_OPTS   : ${CYAN}$SPADES_EXTRA_OPTS${RESET}"
 	echo -e "  Sample list         : $(realpath -m "$OUTPUT_PATH")/pipeline_status.tsv"
 	echo -e "  Detail logs         : $(realpath -m "$OUTPUT_PATH")/logs"
+	echo -e "  Remark              : Press Ctrl+C to abort the run safely!"
     echo -e "================================================"
 	    if [[ -f "$STATUS_FILE" ]]; then
     TOTAL=$(($(wc -l < "$STATUS_FILE") - 1))
@@ -1300,10 +1312,10 @@ process_sample() {
     # =========================
     # Default file paths
     # =========================
-    local CONTIGS_BEFORE=""
+    local CONTIGS_BEFORE="${CONTIGS_BEFORE_DIR}/${SAMPLE}.fasta"
     local OUTFILTER="${FILTERED_DIR}/${SAMPLE}_filtered.fasta"
-    local OUT1="${FASTP_DIR}/${SAMPLE}_R1.fastq.gz"
-    local OUT2="${FASTP_DIR}/${SAMPLE}_R2.fastq.gz"
+    local OUT1="${FASTP_DIR}/${SAMPLE}_trimmed_R1.fastq.gz"
+    local OUT2="${FASTP_DIR}/${SAMPLE}_trimmed_R2.fastq.gz"
     local SPADES_CONTIGS="${SPADES_DIR}/contigs.fasta"
 
     # =========================
@@ -1324,7 +1336,19 @@ process_sample() {
         elif should_run_step "$SAMPLE" "FASTP" || [[ ! -s "$OUT1" || ! -s "$OUT2" ]] || [[ ! -s "${FASTP_DIR}/${SAMPLE}_fastp.html" ]] || [[ ! -s "${FASTP_DIR}/${SAMPLE}_fastp.json" ]]; then
             update_status "$SAMPLE" "FASTP" "RUNNING"
             mkdir -p "$FASTP_DIR"
-            conda activate qassfilt_fastp
+
+            conda activate qassfilt_fastp >/dev/null 2>&1
+            if [[ $? -ne 0 ]]; then
+                echo "[WARN] First activation failed, retrying..."
+                conda activate qassfilt_fastp >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "⚠️ Failed to activate qassfilt_fastp after retry. Exiting."
+                    exit 1
+                else
+                    echo "[INFO] Conda environment qassfilt_fastp activated on second attempt."
+                fi
+            fi
+
             fastp -i "$R1" -I "$R2" \
                   -o "$OUT1" -O "$OUT2" \
                   -h "${FASTP_DIR}/${SAMPLE}_fastp.html" \
@@ -1332,7 +1356,7 @@ process_sample() {
                   -w $THREADS $FASTP_EXTRA_OPTS \
                   >"$LOG_DIR/${SAMPLE}_fastp.log" 2>&1
             FASTP_EXIT=$?
-            conda deactivate
+            conda deactivate >/dev/null 2>&1 || true
 
             if [[ $FASTP_EXIT -eq 0 ]]; then
                 update_status "$SAMPLE" "FASTP" "OK"
@@ -1346,10 +1370,21 @@ process_sample() {
         # =========================
         if is_skipped "SPADES"; then
         update_status "$SAMPLE" "SPADES" "SKIPPED"
-        elif should_run_step "$SAMPLE" "SPADES" || [[ ! -s "${CONTIGS_BEFORE_DIR}/${SAMPLE}_before.fasta" ]]; then
+        elif should_run_step "$SAMPLE" "SPADES" || [[ ! -s "${CONTIGS_BEFORE_DIR}/${SAMPLE}.fasta" ]]; then
             update_status "$SAMPLE" "SPADES" "RUNNING"
             mkdir -p "$SPADES_DIR"
-            conda activate qassfilt_spades
+
+            conda activate qassfilt_spades >/dev/null 2>&1
+            if [[ $? -ne 0 ]]; then
+                echo "[WARN] First activation failed, retrying..."
+                conda activate qassfilt_spades >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "⚠️ Failed to activate qassfilt_spades after retry. Exiting."
+                    exit 1
+                else
+                    echo "[INFO] Conda environment qassfilt_spades activated on second attempt."
+                fi
+            fi
 
             # Use FASTP output if available
             local SPADES_R1="$OUT1"
@@ -1364,20 +1399,17 @@ process_sample() {
                       -t $THREADS $SPADES_EXTRA_OPTS \
                       >"$LOG_DIR/${SAMPLE}_spades.log" 2>&1
             SPADES_EXIT=$?
-            conda deactivate
+            conda deactivate >/dev/null 2>&1 || true
 
-            if [[ $SPADES_EXIT -eq 0 ]]; then
-			CONTIGS_BEFORE="${CONTIGS_BEFORE_DIR}/${SAMPLE}_before.fasta"
-            mkdir -p "$CONTIGS_BEFORE_DIR"
-			[[ -s "$SPADES_CONTIGS" ]] && cp "$SPADES_CONTIGS" "$CONTIGS_BEFORE"
-			update_status "$SAMPLE" "SPADES" "OK"
-            else
-                update_status "$SAMPLE" "SPADES" "FAIL" "$LOG_DIR/${SAMPLE}_spades.log"
+                if [[ $SPADES_EXIT -eq 0 ]]; then
+                mkdir -p "$CONTIGS_BEFORE_DIR"
+                [[ -s "$SPADES_CONTIGS" ]] && mv "$SPADES_CONTIGS" "${CONTIGS_BEFORE_DIR}/${SAMPLE}.fasta"
+                update_status "$SAMPLE" "SPADES" "OK"
+                else
+                    update_status "$SAMPLE" "SPADES" "FAIL" "$LOG_DIR/${SAMPLE}_spades.log"
+                fi
             fi
-        else
-            CONTIGS_BEFORE="$SPADES_CONTIGS"
         fi
-    fi
 
 		# =========================
 		# 3. QUAST BEFORE FILTERING
@@ -1388,7 +1420,19 @@ process_sample() {
 			# Run QUAST-b if CONTIGS_BEFORE exists and step should run
 			if should_run_step "$SAMPLE" "QUAST-b" || [[ ! -s "${OUTPUT_PATH}/quast_before/${SAMPLE}/report.tsv" ]]; then
 				update_status "$SAMPLE" "QUAST-b" "RUNNING"
-				conda activate qassfilt_quast
+
+				conda activate qassfilt_quast >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_quast >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_quast after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_quast activated on second attempt."
+                    fi
+                fi
+
 				local OUTDIR_QUAST="${OUTPUT_PATH}/quast_before/${SAMPLE}"
 				mkdir -p "$OUTDIR_QUAST"
 
@@ -1401,7 +1445,7 @@ process_sample() {
 				fi
 
 				QUASTB_EXIT=$?
-				conda deactivate
+				conda deactivate >/dev/null 2>&1 || true
 
 				[[ $QUASTB_EXIT -eq 0 ]] && update_status "$SAMPLE" "QUAST-b" "OK" || update_status "$SAMPLE" "QUAST-b" "FAIL" "$LOG_DIR/${SAMPLE}_quast_before.log"
 			fi
@@ -1418,14 +1462,24 @@ process_sample() {
 			# Run CHECKM2-b if CONTIGS_BEFORE exists and step should run
 			if should_run_step "$SAMPLE" "CHECKM2-b" || [[ ! -s "${OUTPUT_PATH}/checkm2_before/${SAMPLE}/quality_report.tsv" ]]; then
 				update_status "$SAMPLE" "CHECKM2-b" "RUNNING"
-				conda activate qassfilt_checkm2
+
+				conda activate qassfilt_checkm2 >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_checkm2 >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_checkm2 after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_checkm2 activated on second attempt."
+                    fi
+                fi
 
 				# -----------------------
 				# Export CHECKM2DB with default fallback
 				# -----------------------
 				DEFAULT_CHECKM2DB="$HOME/databases/CheckM2_database"
 				export CHECKM2DB="${CHECKM2DB_PATH:-${CHECKM2_DB:-$DEFAULT_CHECKM2DB}}"
-				echo "[INFO] CHECKM2DB set to $CHECKM2DB"
 
 				LOG_FILE="$LOG_DIR/${SAMPLE}_checkm2_before.log"
 				DB_ARG="--database_path ${CHECKM2DB}/*.dmnd"
@@ -1438,7 +1492,7 @@ process_sample() {
 					>"$LOG_FILE" 2>&1
 
 				CHECKM2B_EXIT=$?
-				conda deactivate
+				conda deactivate >/dev/null 2>&1 || true
 
 				[[ $CHECKM2B_EXIT -eq 0 ]] && update_status "$SAMPLE" "CHECKM2-b" "OK" || update_status "$SAMPLE" "CHECKM2-b" "FAIL" "$LOG_FILE"
 			fi
@@ -1456,21 +1510,35 @@ process_sample() {
 			if should_run_step "$SAMPLE" "FILTER" || [[ ! -s "$OUTFILTER" ]]; then
 				update_status "$SAMPLE" "FILTER" "RUNNING"
                 mkdir -p "$FILTERED_DIR"
-				conda activate qassfilt_seqkit
+
+				conda activate qassfilt_seqkit >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_seqkit >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_seqkit after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_seqkit activated on second attempt."
+                    fi
+                fi
 
 				LOG_FILE="$LOG_DIR/${SAMPLE}_filter.log"
 				TMP_OUT="${OUTFILTER}.tmp"
 
 				# Filter by coverage
-				seqkit fx2tab "$CONTIGS_BEFORE" | \
-				awk -F "\t" -v cov="$SEQKIT_MIN_COV" '{
-					header=$1
-					seq=$2
-					covval=""
-					if (match(header, /_cov_([0-9]+\.?[0-9]*)/, arr)) covval=arr[1]
-					else if (match(header, /_depth_([0-9]+\.?[0-9]*)/, arr)) covval=arr[1]
-					if (covval != "" && covval+0 >= cov) print ">"header"\n"seq
-				}' | seqkit seq -m "$SEQKIT_MIN_LENGTH" > "$TMP_OUT" 2>"$LOG_FILE"
+				{
+                seqkit fx2tab "$CONTIGS_BEFORE" | \
+                awk -F "\t" -v cov="$SEQKIT_MIN_COV" '{
+                    header=$1
+                    seq=$2
+                    covval=""
+                    if (match(header, /_cov_([0-9]+\.?[0-9]*)/, arr)) covval=arr[1]
+                    else if (match(header, /_depth_([0-9]+\.?[0-9]*)/, arr)) covval=arr[1]
+                    if (covval != "" && covval+0 >= cov) print ">"header"\n"seq
+                }' | \
+                seqkit seq -m "$SEQKIT_MIN_LENGTH" > "$TMP_OUT"
+                } 2> "$LOG_FILE"
 
 				FILTER_EXIT=$?
 
@@ -1489,7 +1557,7 @@ process_sample() {
 					update_status "$SAMPLE" "FILTER" "FAIL" "$LOG_FILE"
 				fi
 
-				conda deactivate
+				conda deactivate >/dev/null 2>&1 || true
 			fi
 		else
 			update_status "$SAMPLE" "FILTER" "SKIPPED"
@@ -1504,7 +1572,19 @@ process_sample() {
 			# Rerun QUAST if report missing or empty
 			if should_run_step "$SAMPLE" "QUAST-a" || [[ ! -s "${OUTPUT_PATH}/quast_after/${SAMPLE}/report.tsv" ]]; then
 				update_status "$SAMPLE" "QUAST-a" "RUNNING"
-				conda activate qassfilt_quast
+
+				conda activate qassfilt_quast >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_quast >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_quast after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_quast activated on second attempt."
+                    fi
+                fi
+
 				local OUTDIR_QUAST="${OUTPUT_PATH}/quast_after/${SAMPLE}"
 				mkdir -p "$OUTDIR_QUAST"
 
@@ -1516,7 +1596,7 @@ process_sample() {
 						>"$LOG_DIR/${SAMPLE}_quast_after.log" 2>&1
 				fi
 				QUASTA_EXIT=$?
-				conda deactivate
+				conda deactivate >/dev/null 2>&1 || true
 
 				[[ $QUASTA_EXIT -eq 0 ]] && update_status "$SAMPLE" "QUAST-a" "OK" || update_status "$SAMPLE" "QUAST-a" "FAIL" "$LOG_DIR/${SAMPLE}_quast_after.log"
 			fi
@@ -1533,14 +1613,24 @@ process_sample() {
 			# Run CHECKM2-a if OUTFILTER exists and step should run
 			if should_run_step "$SAMPLE" "CHECKM2-a" || [[ ! -s "${OUTPUT_PATH}/checkm2_after/${SAMPLE}/quality_report.tsv" ]]; then
 				update_status "$SAMPLE" "CHECKM2-a" "RUNNING"
-				conda activate qassfilt_checkm2
+
+				conda activate qassfilt_checkm2 >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_checkm2 >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_checkm2 after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_checkm2 activated on second attempt."
+                    fi
+                fi
 
 				# -----------------------
 				# Export CHECKM2DB with default fallback
 				# -----------------------
 				DEFAULT_CHECKM2DB="$HOME/databases/CheckM2_database"
 				export CHECKM2DB="${CHECKM2DB_PATH:-${CHECKM2_DB:-$DEFAULT_CHECKM2DB}}"
-				echo "[INFO] CHECKM2DB set to $CHECKM2DB"
 
 				LOG_FILE="$LOG_DIR/${SAMPLE}_checkm2_after.log"
 				DB_ARG="--database_path ${CHECKM2DB}/*.dmnd"
@@ -1553,7 +1643,7 @@ process_sample() {
 					>"$LOG_FILE" 2>&1
 
 				CHECKM2B_EXIT=$?
-				conda deactivate
+				conda deactivate >/dev/null 2>&1 || true
 
 				[[ $CHECKM2B_EXIT -eq 0 ]] && update_status "$SAMPLE" "CHECKM2-a" "OK" || update_status "$SAMPLE" "CHECKM2-a" "FAIL" "$LOG_FILE"
 			fi
@@ -1570,19 +1660,31 @@ process_sample() {
                 update_status "$SAMPLE" "KRAKEN2-b" "SKIPPED"
                 update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
             else
-                local KRAKENLOG="${LOG_DIR}/kraken2.log"
+                local KRAKENLOG="${LOG_DIR}/${SAMPLE}_kraken2.log"
                 mkdir -p "${OUTPUT_PATH}/kraken2/"
 
             # --- Run on CONTIGS_BEFORE ---
-            local KRAKEN2_BEFORE_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}_before.output"
-            local KRAKEN2_BEFORE_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}_before.report"
+            local KRAKEN2_BEFORE_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}.output"
+            local KRAKEN2_BEFORE_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}.report"
 
             if is_skipped "KRAKEN2-b"; then
             update_status "$SAMPLE" "KRAKEN2-b" "SKIPPED"
             elif [[ -s "$CONTIGS_BEFORE" ]]; then
             if should_run_step "$SAMPLE" "KRAKEN2-b" || [[ ! -s "$KRAKEN2_BEFORE_REPORT" ]] || [[ ! -s "$KRAKEN2_BEFORE_OUT" ]]; then
                 update_status "$SAMPLE" "KRAKEN2-b" "RUNNING"
-                conda activate qassfilt_kraken2 >/dev/null 2>&1 || true
+
+                conda activate qassfilt_kraken2 >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_kraken2 >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_kraken2 after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_kraken2 activated on second attempt."
+                    fi
+                fi
+
                 kraken2 \
                 --db "$KRAKEN2_DB_PATH" \
                 --threads "$THREADS" \
@@ -1590,7 +1692,7 @@ process_sample() {
                 --report "$KRAKEN2_BEFORE_REPORT" \
                 --use-names \
                 "$CONTIGS_BEFORE" \
-                >>"$KRAKENLOG" 2>&1
+                >"$KRAKENLOG" 2>&1
                 [[ $? -eq 0 ]] && update_status "$SAMPLE" "KRAKEN2-b" "OK" || update_status "$SAMPLE" "KRAKEN2-b" "FAIL" "$KRAKENLOG"
                 conda deactivate >/dev/null 2>&1 || true
             fi
@@ -1607,7 +1709,19 @@ process_sample() {
             elif [[ -s "$OUTFILTER" ]]; then
             if should_run_step "$SAMPLE" "KRAKEN2-a" || [[ ! -s "$KRAKEN2_AFTER_REPORT" ]] || [[ ! -s "$KRAKEN2_AFTER_OUT" ]]; then
                 update_status "$SAMPLE" "KRAKEN2-a" "RUNNING"
-                conda activate qassfilt_kraken2 >/dev/null 2>&1 || true
+
+                conda activate qassfilt_kraken2 >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_kraken2 >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_kraken2 after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_kraken2 activated on second attempt."
+                    fi
+                    fi
+
                 kraken2 \
                 --db "$KRAKEN2_DB_PATH" \
                 --threads "$THREADS" \
@@ -1615,7 +1729,7 @@ process_sample() {
                 --report "$KRAKEN2_AFTER_REPORT" \
                 --use-names \
                 "$OUTFILTER" \
-                >>"$KRAKENLOG" 2>&1
+                >"$KRAKENLOG" 2>&1
                 [[ $? -eq 0 ]] && update_status "$SAMPLE" "KRAKEN2-a" "OK" || update_status "$SAMPLE" "KRAKEN2-a" "FAIL" "$KRAKENLOG"
                 conda deactivate >/dev/null 2>&1 || true
             fi
@@ -1644,14 +1758,6 @@ THREADS_PER_JOB=${THREADS_PER_JOB:-$THREADS}
 MAX_JOBS=$(( CORES_ALLOWED / THREADS_PER_JOB ))
 if [[ $MAX_JOBS -lt 1 ]]; then MAX_JOBS=1; fi
 
-# Memory guard (MB)
-MIN_FREE_MEM_MB=${MIN_FREE_MEM_MB:-2048}  # will wait if free mem < this
-
-# helper to get free mem (Linux)
-get_free_mem_mb() {
-    awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0
-}
-
 for SAMPLE in "${SAMPLES[@]}"; do
 
     # ----------------------------------------------------
@@ -1661,12 +1767,10 @@ for SAMPLE in "${SAMPLES[@]}"; do
     if [[ $CONTIG_MODE -eq 1 && $COMPETITIVE_MODE -eq 1 ]]; then
         R1=""
         R2=""
-        echo "BOTH MODES: Using COMPETITIVE_MODE with empty reads for $SAMPLE"
 
         while :; do
             RUNNING_JOBS=$(jobs -r -p | wc -l)
-            FREE_MEM_MB=$(get_free_mem_mb)
-            if (( RUNNING_JOBS < MAX_JOBS && FREE_MEM_MB > MIN_FREE_MEM_MB )); then
+            if (( RUNNING_JOBS < MAX_JOBS )); then
                 break
             fi
             sleep 1
@@ -1687,7 +1791,6 @@ for SAMPLE in "${SAMPLES[@]}"; do
     if [[ $CONTIG_MODE -eq 1 ]]; then
         R1=""
         R2=""
-        echo "CONTIG: $SAMPLE"
         process_sample "$SAMPLE" "$R1" "$R2"
     
     # ----------------------------------------------------
@@ -1699,8 +1802,7 @@ for SAMPLE in "${SAMPLES[@]}"; do
 
         while :; do
             RUNNING_JOBS=$(jobs -r -p | wc -l)
-            FREE_MEM_MB=$(get_free_mem_mb)
-            if (( RUNNING_JOBS < MAX_JOBS && FREE_MEM_MB > MIN_FREE_MEM_MB )); then
+            if (( RUNNING_JOBS < MAX_JOBS )); then
                 break
             fi
             sleep 1
@@ -1726,6 +1828,22 @@ for SAMPLE in "${SAMPLES[@]}"; do
 done
 
 wait
+
+# Auto resume to secure all sample finish
+ORIGINAL_COMMAND="$0 $@"
+
+# Only trigger resume in competitive mode (one-time only)
+if [[ "${COMPETITIVE_MODE:-0}" -eq 1 ]] && [[ -z "${AUTO_RESUME_DONE:-}" ]]; then
+
+    # Mark as already auto-resumed to prevent infinite loop
+    export AUTO_RESUME_DONE=1
+
+    # Only run if ORIGINAL_COMMAND is set
+    if [[ -n "${ORIGINAL_COMMAND:-}" ]]; then
+        # rerun in background to avoid blocking
+        bash -c "bash ${ORIGINAL_COMMAND}"
+    fi
+fi
 
 # Wrapper helper: if in competitive mode, we wrap inside a function
 wrap_if_competitive() {
@@ -1757,20 +1875,31 @@ $body
                 export GTDBTK_DATA_PATH="$GTDBTK_DB_PATH"
 
         wrap_if_competitive run_gtdbtk_before << 'EOF'
-            # --- Run on CONTIGS_BEFORE ---
-            CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before"
+            # --- Run on CONTIGS_BEFORE_GTDBTK ---
+            CONTIGS_BEFORE_GTDBTK="${OUTPUT_PATH}/contigs_before"
             GTDBTK_BEFORE_DIR="${OUTPUT_PATH}/gtdbtk/before"
             mkdir -p "$GTDBTK_BEFORE_DIR"
             if is_skipped "GTDBTK-b"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
                     update_status "$SAMPLE" "GTDBTK-b" "SKIPPED"
                 done
-            elif [[ -s "$CONTIGS_BEFORE" ]]; then
+            elif [[ -d "$CONTIGS_BEFORE_GTDBTK" ]]; then
             if should_run_step "$SAMPLE" "GTDBTK-b" || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.classify.tree.1.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.backbone.bac120.classify.tree" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.summary.tsv" ]] || [[ ! -s "${GTDBTK_BEFORE_DIR}/classify/before.bac120.tree.mapping.tsv" ]]; then
                 update_status "$SAMPLE" "GTDBTK-b" "RUNNING"
-                conda activate qassfilt_gtdbtk >/dev/null 2>&1 || true
 
-            find "$CONTIGS_BEFORE" -type f \
+                conda activate qassfilt_gtdbtk >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_gtdbtk >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_gtdbtk after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_gtdbtk activated on second attempt."
+                    fi
+                    fi
+
+            find "$CONTIGS_BEFORE_GTDBTK" -type f \
             \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" \) |
             awk '{
             path=$0
@@ -1812,20 +1941,30 @@ $body
 EOF
 
             wrap_if_competitive run_gtdbtk_after << 'EOF'
-            # --- Run on OUTFILTER ---
-            OUTFILTER="${OUTPUT_PATH}/contigs_filtered/"
+            # --- Run on OUTFILTER_GTDBTK ---
+            OUTFILTER_GTDBTK="${OUTPUT_PATH}/contigs_filtered/"
             GTDBTK_AFTER_DIR="${OUTPUT_PATH}/gtdbtk/after"
             mkdir -p "$GTDBTK_AFTER_DIR"
             if is_skipped "GTDBTK-a"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
                     update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
                 done
-            elif [[ -s "$OUTFILTER" ]]; then
+            elif [[ -d "$OUTFILTER_GTDBTK" ]]; then
             if should_run_step "$SAMPLE" "GTDBTK-a" || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.classify.tree.1.tree" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.backbone.bac120.classify.tree" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.summary.tsv" ]] || [[ ! -s "${GTDBTK_AFTER_DIR}/classify/after.bac120.tree.mapping.tsv" ]]; then
                 update_status "$SAMPLE" "GTDBTK-a" "RUNNING"
-                conda activate qassfilt_gtdbtk >/dev/null 2>&1 || true
+                conda activate qassfilt_gtdbtk >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_gtdbtk >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_gtdbtk after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_gtdbtk activated on second attempt."
+                    fi
+                    fi
                 gtdbtk classify_wf \
-                --genome_dir "$OUTFILTER" \
+                --genome_dir "$OUTFILTER_GTDBTK" \
                 --out_dir "$GTDBTK_AFTER_DIR" \
                 --cpus "$GTDBTK_THREADS" \
                 --extension fasta \
@@ -1870,21 +2009,32 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     mkdir -p "$(dirname "$ABRITAMRLOG")"
     mkdir -p "${OUTPUT_PATH}/abritamr"
 
-    CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before"
+    CONTIGS_BEFORE_ABRITAMR="${OUTPUT_PATH}/contigs_before"
     ABRITAMR_BEFORE_OUT="${OUTPUT_PATH}/abritamr/before"
 
     if is_skipped "ABRITAMR-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRITAMR-b" "SKIPPED"
         done
-    elif [[ -d "$CONTIGS_BEFORE" && $(find "$CONTIGS_BEFORE" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
+    elif [[ -d "$CONTIGS_BEFORE_ABRITAMR" && $(find "$CONTIGS_BEFORE_ABRITAMR" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-b" || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_BEFORE_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-b" "RUNNING"
                 mkdir -p "$ABRITAMR_BEFORE_OUT"
-            conda activate qassfilt_abritamr >/dev/null 2>&1 || true
+
+            conda activate qassfilt_abritamr >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_abritamr >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_abritamr after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_abritamr activated on second attempt."
+                    fi
+                    fi
 
             # Create .tab mapping file
-            find "$CONTIGS_BEFORE" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
+            find "$CONTIGS_BEFORE_ABRITAMR" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
                 file=$NF; sub(/\.[^.]+$/, "", file);
                 print file "\t" $0
             }' > "${ABRITAMR_BEFORE_OUT}/abritamr_list_before.tab"
@@ -1916,21 +2066,31 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     fi
 
     # --- Run on OUTFILTER ---
-    OUTFILTER="${OUTPUT_PATH}/contigs_filtered/"
+    OUTFILTER_ABRITAMR="${OUTPUT_PATH}/contigs_filtered/"
     ABRITAMR_AFTER_OUT="${OUTPUT_PATH}/abritamr/after"
 
     if is_skipped "ABRITAMR-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRITAMR-a" "SKIPPED"
         done
-    elif [[ -d "$OUTFILTER" && $(find "$OUTFILTER" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
+    elif [[ -d "$OUTFILTER_ABRITAMR" && $(find "$OUTFILTER_ABRITAMR" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | wc -l) -gt 0 ]]; then
         if should_run_step "$SAMPLE" "ABRITAMR-a" || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_matches.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_partials.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/summary_virulence.txt" ]] || [[ ! -s "$ABRITAMR_AFTER_OUT/abritamr.txt" ]]; then
             update_status "$SAMPLE" "ABRITAMR-a" "RUNNING"
                 mkdir -p "$ABRITAMR_AFTER_OUT"
-            conda activate qassfilt_abritamr >/dev/null 2>&1 || true
+            conda activate qassfilt_abritamr >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_abritamr >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_abritamr after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_abritamr activated on second attempt."
+                    fi
+                    fi
 
             # Create .tab mapping file
-            find "$OUTFILTER" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
+            find "$OUTFILTER_ABRITAMR" -type f \( -iname "*.fa" -o -iname "*.fna" -o -iname "*.fasta" -o -iname "*.fas" -o -iname "*.ffn" \) | awk -F/ '{
                 file=$NF; sub(/\.[^.]+$/, "", file);
                 print file "\t" $0
             }' > "${ABRITAMR_AFTER_OUT}/abritamr_list_after.tab"
@@ -1970,24 +2130,34 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
     ABRICATELOG="${OUTPUT_PATH}/logs/abricate.log"
     mkdir -p "${OUTPUT_PATH}/abricate/"
 
-    # --- Run on CONTIGS_BEFORE ---
-    shopt -s nullglob; CONTIGS_BEFORE=( "$OUTPUT_PATH/contigs_before/"*.fa "$OUTPUT_PATH/contigs_before/"*.fna "$OUTPUT_PATH/contigs_before/"*.fasta "$OUTPUT_PATH/contigs_before/"*.fas "$OUTPUT_PATH/contigs_before/"*.ffn ); shopt -u nullglob
+    # --- Run on CONTIGS_BEFORE_ABRICATE ---
+    shopt -s nullglob; CONTIGS_BEFORE_ABRICATE=( "$OUTPUT_PATH/contigs_before/"*.fa "$OUTPUT_PATH/contigs_before/"*.fna "$OUTPUT_PATH/contigs_before/"*.fasta "$OUTPUT_PATH/contigs_before/"*.fas "$OUTPUT_PATH/contigs_before/"*.ffn ); shopt -u nullglob
     ABRICATE_BEFORE_PREFIX="${OUTPUT_PATH}/abricate/before"
 
     if is_skipped "ABRICATE-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRICATE-b" "SKIPPED"
         done
-    elif (( ${#CONTIGS_BEFORE[@]} > 0 )); then
+    elif (( ${#CONTIGS_BEFORE_ABRICATE[@]} > 0 )); then
         if should_run_step "$SAMPLE" "ABRICATE-b" || [[ ! -s "${OUTPUT_PATH}/abricate/before_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/before_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-b" "RUNNING"
-            conda activate qassfilt_abricate >/dev/null 2>&1 || true
+            conda activate qassfilt_abricate >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_abricate >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_abricate after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_abricate activated on second attempt."
+                    fi
+                    fi
 
             ABRICATE_DBS=$(abricate --list | awk 'NR>1 {print $1}')
             for DB in $ABRICATE_DBS; do
                 DB_PREFIX="${ABRICATE_BEFORE_PREFIX}_${DB}"
                 echo "[$(date '+%F %T')] Running ABRICATE (before) with database: $DB" >>"$ABRICATELOG"
-                abricate $ABRICATE_EXTRA_OPTS --db "$DB" "${CONTIGS_BEFORE[@]}" > "${DB_PREFIX}.tsv" 2>>"$ABRICATELOG"
+                abricate $ABRICATE_EXTRA_OPTS --db "$DB" "${CONTIGS_BEFORE_ABRICATE[@]}" > "${DB_PREFIX}.tsv" 2>>"$ABRICATELOG"
 
                 if [[ -s "${DB_PREFIX}.tsv" ]]; then
                     abricate --summary "${DB_PREFIX}.tsv" > "${DB_PREFIX}.summary.tsv" 2>>"$ABRICATELOG"
@@ -2015,24 +2185,35 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
         done
     fi
 
-    # --- Run on OUTFILTER ---
-    shopt -s nullglob; OUTFILTER=( "${OUTPUT_PATH}/contigs_filtered/"*.fa "${OUTPUT_PATH}/contigs_filtered/"*.fna "${OUTPUT_PATH}/contigs_filtered/"*.fasta "${OUTPUT_PATH}/contigs_filtered/"*.fas "${OUTPUT_PATH}/contigs_filtered/"*.ffn ); shopt -u nullglob
+    # --- Run on OUTFILTER_ABRICATE ---
+    shopt -s nullglob; OUTFILTER_ABRICATE=( "${OUTPUT_PATH}/contigs_filtered/"*.fa "${OUTPUT_PATH}/contigs_filtered/"*.fna "${OUTPUT_PATH}/contigs_filtered/"*.fasta "${OUTPUT_PATH}/contigs_filtered/"*.fas "${OUTPUT_PATH}/contigs_filtered/"*.ffn ); shopt -u nullglob
     ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/abricate/filtered"
 
     if is_skipped "ABRICATE-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRICATE-a" "SKIPPED"
         done
-    elif (( ${#OUTFILTER[@]} > 0 )); then
+    elif (( ${#OUTFILTER_ABRICATE[@]} > 0 )); then
         if should_run_step "$SAMPLE" "ABRICATE-a" || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-a" "RUNNING"
-            conda activate qassfilt_abricate >/dev/null 2>&1 || true
+
+            conda activate qassfilt_abricate >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_abricate >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_abricate after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_abricate activated on second attempt."
+                    fi
+                    fi
 
             ABRICATE_DBS=$(abricate --list | awk 'NR>1 {print $1}')
             for DB in $ABRICATE_DBS; do
                 DB_PREFIX="${ABRICATE_AFTER_PREFIX}_${DB}"
                 echo "[$(date '+%F %T')] Running ABRICATE (after) with database: $DB" >>"$ABRICATELOG"
-                abricate $ABRICATE_EXTRA_OPTS --db "$DB" "${OUTFILTER[@]}" > "${DB_PREFIX}.tsv" 2>>"$ABRICATELOG"
+                abricate $ABRICATE_EXTRA_OPTS --db "$DB" "${OUTFILTER_ABRICATE[@]}" > "${DB_PREFIX}.tsv" 2>>"$ABRICATELOG"
 
                 if [[ -s "${DB_PREFIX}.tsv" ]]; then
                     abricate --summary "${DB_PREFIX}.tsv" > "${DB_PREFIX}.summary.tsv" 2>>"$ABRICATELOG"
@@ -2125,9 +2306,19 @@ fi
 			for SAMPLE in "${SAMPLES[@]}"; do
 				update_status "$SAMPLE" "MULTIQC" "SKIPPED"
 			done
-		elif should_run_step "$SAMPLE" "MULTIQC" || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_QUAST_CheckM2_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_GTDB-Tk_Kraken2_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Fastp_Report_multiqc_report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Abricate_Report.html" ]] || [[ ! -d "${OUTPUT_PATH}/multiqc_reports/QAssfilt_abritAMR_Report.html" ]]; then
+		elif should_run_step "$SAMPLE" "MULTIQC" || [[ ! -s "${OUTPUT_PATH}/multiqc_reports/QAssfilt_QUAST_CheckM2_MultiQC_Report.html" ]] || [[ ! -s "${OUTPUT_PATH}/multiqc_reports/QAssfilt_GTDB-Tk_Kraken2_MultiQC_Report.html" ]] || [[ ! -s "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Fastp_MultiQC_Report.html" ]] || [[ ! -s "${OUTPUT_PATH}/multiqc_reports/QAssfilt_Abricate_Report.html" ]] || [[ ! -s "${OUTPUT_PATH}/multiqc_reports/QAssfilt_abritAMR_Report.html" ]]; then
 			update_status "$SAMPLE" "MULTIQC" "RUNNING"
-			conda activate qassfilt_multiqc
+			conda activate qassfilt_multiqc >/dev/null 2>&1
+                if [[ $? -ne 0 ]]; then
+                    echo "[WARN] First activation failed, retrying..."
+                    conda activate qassfilt_multiqc >/dev/null 2>&1
+                    if [[ $? -ne 0 ]]; then
+                        echo "⚠️ Failed to activate qassfilt_multiqc after retry. Exiting."
+                        exit 1
+                    else
+                        echo "[INFO] Conda environment qassfilt_multiqc activated on second attempt."
+                    fi
+                    fi
 
 			LOG_FILE="${OUTPUT_PATH}/logs/multiqc.log"
 			mkdir -p "${OUTPUT_PATH}/logs"
@@ -2193,6 +2384,7 @@ EOF
         multiqc "${OUTPUT_PATH}/fastp_file" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt_Fastp_Report" \
+            --filename "QAssfilt_Fastp_MultiQC_Report.html" \
             -c "$FASTP_CONFIG" \
             --force \
             --module fastp \
@@ -2213,6 +2405,7 @@ EOF
         multiqc "${QC_DIRS[@]}" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt_QUAST_CheckM2_Report" \
+            --filename "QAssfilt_QUAST_CheckM2_MultiQC_Report.html" \
             --force \
             >>"$LOG_FILE" 2>&1
         RUN_ANY=1
@@ -2230,6 +2423,7 @@ EOF
         multiqc "${MULTIQC_INPUTS[@]}" \
             -o "${OUTPUT_PATH}/multiqc_reports" \
             --title "QAssfilt_GTDB-Tk_Kraken2_Report" \
+            --filename "QAssfilt_GTDB-Tk_Kraken2_MultiQC_Report.html" \
             --force \
             >>"$LOG_FILE" 2>&1
 
@@ -2315,7 +2509,7 @@ mv "$ABRICATE_TMP" "$ABRICATE_COMBINED"
 
 #HTML Report
 if [[ ! -s "$ABRICATE_COMBINED" ]]; then
-    echo "No data found. Skipping HTML report."
+    echo ""
 else
 
 ABRICATE_COMBINED="$ABRICATE_COMBINED" \
@@ -2336,7 +2530,7 @@ html = f"""<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
-<title>QAssfilt abricate Report</title>
+<title>QAssfilt ABRicate Report</title>
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
@@ -2353,13 +2547,47 @@ html = f"""<!DOCTYPE html>
 <script src="https://cdn.datatables.net/colresize/1.0.2/js/dataTables.colResize.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/searchpanes/2.2.0/css/searchPanes.dataTables.min.css">
 <script src="https://cdn.datatables.net/searchpanes/2.2.0/js/dataTables.searchPanes.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
 body {{ font-family: Arial, sans-serif; margin:20px; background:#f4f6f7; }}
 h1 {{ border-bottom:3px solid #16a085; }}
+.select2-results__option::before {{
+    content: "☐ ";
+    font-size: 14px;
+}}
+
+.select2-results__option--selected::before {{
+    content: "☑ ";
+}}
+/* --- Force Select2 dropdown arrow visibility --- */
+.select2-container--default.select2-container--open .select2-selection--multiple {{
+    border-color: #aaa;
+}}
+
+.select2-container--default .select2-selection--multiple .select2-selection__arrow {{
+    display: block; /* make sure it’s visible */
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    transform: translateY(-50%);
+}}
+
+.select2-container--default .select2-selection--multiple .select2-selection__arrow b {{
+    border-color: #555 transparent transparent transparent;
+    border-style: solid;
+    border-width: 6px 5px 0 5px;
+}}
+#table th,
+#table td {{
+    white-space: nowrap;       /* no wrapping */
+}}
 </style>
 </head>
 <body>
-<h1>QAssfilt abricate Report</h1>
+<h1>QAssfilt ABRicate Report</h1>
 
 <table id="table" class="display" style="width:100%">
 <thead>
@@ -2367,7 +2595,7 @@ h1 {{ border-bottom:3px solid #16a085; }}
 {''.join([f'<th>{c}</th>' for c in df.columns])}
 </tr>
 <tr>
-{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select><option value="">All</option></select></th>' for c in df.columns])}
+{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
 </tr>
 </thead>
 <tbody>
@@ -2409,19 +2637,30 @@ $(document).ready(function() {
                 var header = $(column.header()).parent().next().children().eq(i);
 
                 var select = header.find('select');
+                select.select2({
+                    placeholder: "Filter by " + column.header().textContent,
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: 'resolve'
+                });
                 column.data().unique().sort().each(function(d) {
                     if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
                 });
 
                 select.on('change', function() {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                    column.search(val ? '^'+val+'$' : '', true, false).draw();
-                });
+                var values = $(this).val();   // array of selected values
 
-                header.find('input').on('keyup change clear', function() {
-                    if(column.search() !== this.value) {
-                        column.search(this.value).draw();
-                    }
+                if (!values || values.length === 0 || values.includes("")) {
+                    column.search('').draw();
+                    return;
+                }
+
+                // Build exact-match regex: ^val1$|^val2$|^val3$
+                var regex = values
+                    .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
+                    .join('|');
+
+                column.search(regex, true, false).draw();  // regex=true, smart=false
                 });
             });
         }
@@ -2469,9 +2708,9 @@ INPUT_FILES=()
 # HANDLE NO INPUT FILES
 # =========================
 if [[ ! -s "$INPUT_FILES" ]]; then
-    echo "No data found. Skipping ABRITAMR consolidation."
+    echo ""
 else
-    echo "[INFO] Merging ${#INPUT_FILES[@]} ABRITAMR summary files"
+    echo ""
 
 # =========================
 # MERGE LOGIC
@@ -2554,7 +2793,7 @@ fi
 # GENERATE INTERACTIVE HTML
 # ===============================
 if [[ ! -s "$ABRITAMR_COMBINED" ]]; then
-    echo "No data found. Skipping HTML report."
+    echo ""
 else
 ABRITAMR_COMBINED="$ABRITAMR_COMBINED" \
 ABRITAMR_HTML="$ABRITAMR_HTML" \
@@ -2589,9 +2828,46 @@ html = f"""<!DOCTYPE html>
 <script src="https://cdn.datatables.net/colreorder/1.6.2/js/dataTables.colReorder.min.js"></script>
 <link rel="stylesheet" href="https://cdn.datatables.net/colresize/1.0.2/css/dataTables.colResize.min.css">
 <script src="https://cdn.datatables.net/colresize/1.0.2/js/dataTables.colResize.min.js"></script>
+<link rel="stylesheet" href="https://cdn.datatables.net/searchpanes/2.2.0/css/searchPanes.dataTables.min.css">
+<script src="https://cdn.datatables.net/searchpanes/2.2.0/js/dataTables.searchPanes.min.js"></script>
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <style>
 body {{ font-family: Arial, sans-serif; margin:20px; background:#f4f6f7; }}
 h1 {{ border-bottom:3px solid #16a085; }}
+.select2-results__option::before {{
+    content: "☐ ";
+    font-size: 14px;
+}}
+
+.select2-results__option--selected::before {{
+    content: "☑ ";
+}}
+/* --- Force Select2 dropdown arrow visibility --- */
+.select2-container--default.select2-container--open .select2-selection--multiple {{
+    border-color: #aaa;
+}}
+
+.select2-container--default .select2-selection--multiple .select2-selection__arrow {{
+    display: block; /* make sure it’s visible */
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    transform: translateY(-50%);
+}}
+
+.select2-container--default .select2-selection--multiple .select2-selection__arrow b {{
+    border-color: #555 transparent transparent transparent;
+    border-style: solid;
+    border-width: 6px 5px 0 5px;
+}}
+}}
+#table th,
+#table td {{
+    white-space: nowrap;       /* no wrapping */
+}}
 </style>
 </head>
 <body>
@@ -2603,7 +2879,7 @@ h1 {{ border-bottom:3px solid #16a085; }}
 {''.join([f'<th>{c}</th>' for c in df.columns])}
 </tr>
 <tr>
-{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select><option value="">All</option></select></th>' for c in df.columns])}
+{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
 </tr>
 </thead>
 <tbody>
@@ -2645,19 +2921,30 @@ $(document).ready(function() {
                 var header = $(column.header()).parent().next().children().eq(i);
 
                 var select = header.find('select');
+                select.select2({
+                    placeholder: "Filter by " + column.header().textContent,
+                    allowClear: true,
+                    closeOnSelect: false,
+                    width: 'resolve'
+                });
                 column.data().unique().sort().each(function(d) {
                     if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
                 });
 
                 select.on('change', function() {
-                    var val = $.fn.dataTable.util.escapeRegex($(this).val());
-                    column.search(val ? '^'+val+'$' : '', true, false).draw();
-                });
+                var values = $(this).val();   // array of selected values
 
-                header.find('input').on('keyup change clear', function() {
-                    if(column.search() !== this.value) {
-                        column.search(this.value).draw();
-                    }
+                if (!values || values.length === 0 || values.includes("")) {
+                    column.search('').draw();
+                    return;
+                }
+
+                // Build exact-match regex: ^val1$|^val2$|^val3$
+                var regex = values
+                    .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
+                    .join('|');
+
+                column.search(regex, true, false).draw();  // regex=true, smart=false
                 });
             });
         }
@@ -2674,7 +2961,7 @@ RUN_ANY=1
 fi
 
     MQ_EXIT=$?
-    conda deactivate
+    conda deactivate >/dev/null 2>&1 || true
 
     if [[ $RUN_ANY -eq 1 && $MQ_EXIT -eq 0 ]]; then
         for SAMPLE in "${SAMPLES[@]}"; do
