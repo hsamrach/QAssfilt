@@ -1,5 +1,5 @@
 {% set name = "qassfilt" %}
-{% set version = "1.3.3" %}
+{% set version = "1.3.4" %}
 
 package:
   name: {{ name|lower }}
@@ -29,7 +29,7 @@ about:
   home: https://github.com/hsamrach/QAssfilt
   license: GPL-3.0-only
   license_file: LICENSE
-  summary: "QAssfilt: a ready-to-use genome assembly quality filtering pipeline"
+  summary: "QAssfilt: a decision-making initiator in genome assembly filtering"
   description: |
     Make sure that the following tools are installed in the environment:
       - fastp
@@ -51,6 +51,4 @@ extra:
   identifiers:
     - biotools:qassfilt
   requirements_note: |
-    The following external tools are required but not installed automatically:
-      fastp, spades, seqkit, checkm2, quast, kraken2,
-      gtdbtk, abritamr, abricate, multiqc
+        Conda and mamba must be installed before running QAssfilt.
