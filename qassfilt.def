@@ -3,7 +3,7 @@ From: ubuntu:22.04
 
 %labels
     Author "hsamrach"
-    Version "1.3.3"
+    Version "1.3.4"
     Tool "QAssfilt"
 
 %post
@@ -52,38 +52,39 @@ conda update -n base -c defaults -y conda
 # Install QAssfilt and sub-environments
 # ============================
 echo "=== Installing QAssfilt ==="
-conda install -n base -c samrachhan11 -y qassfilt=1.3.3
+conda install -n base -c conda-forge mamba -y
+conda install -n base -c samrachhan11 -y qassfilt=1.3.4
 
 # Sub-environments for tools
-conda create -n qassfilt_abricate -y
-conda install -n qassfilt_abricate -c defaults -c bioconda -c conda-forge -y abricate=1.0.1
+mamba create -n qassfilt_abricate -y
+mamba install -n qassfilt_abricate -c defaults -c bioconda -c conda-forge -y abricate=1.0.1
 
-conda create -n qassfilt_abritamr -y
-conda install -n qassfilt_abritamr -c defaults -c conda-forge -c bioconda -y abritamr=1.0.19
+mamba create -n qassfilt_abritamr -y
+mamba install -n qassfilt_abritamr -c defaults -c conda-forge -c bioconda -y abritamr=1.0.19
 
-conda create -n qassfilt_gtdbtk -y
-conda install -n qassfilt_gtdbtk -c defaults -c conda-forge -c bioconda -y gtdbtk=2.5.2 python=3.11
+mamba create -n qassfilt_gtdbtk -y
+mamba install -n qassfilt_gtdbtk -c defaults -c conda-forge -c bioconda -y gtdbtk=2.5.2 python=3.11
 
-conda create -n qassfilt_kraken2 -y
-conda install -n qassfilt_kraken2 -c defaults -c conda-forge -c bioconda -y kraken2=2.1.6
+mamba create -n qassfilt_kraken2 -y
+mamba install -n qassfilt_kraken2 -c defaults -c conda-forge -c bioconda -y kraken2=2.1.6
 
-conda create -n qassfilt_checkm2 python=3.12 -y
-conda install -n qassfilt_checkm2 -c defaults -c conda-forge -c bioconda -y checkm2=1.1.0
+mamba create -n qassfilt_checkm2 python=3.12 -y
+mamba install -n qassfilt_checkm2 -c defaults -c conda-forge -c bioconda -y checkm2=1.1.0
 
-conda create -n qassfilt_fastp python=3.12 -y
-conda install -n qassfilt_fastp -c defaults -c conda-forge -c bioconda -y fastp=1.0.1
+mamba create -n qassfilt_fastp python=3.12 -y
+mamba install -n qassfilt_fastp -c defaults -c conda-forge -c bioconda -y fastp=1.0.1
 
-conda create -n qassfilt_spades python=3.12 -y
-conda install -n qassfilt_spades -c defaults -c conda-forge -c bioconda -y spades=4.2.0
+mamba create -n qassfilt_spades python=3.12 -y
+mamba install -n qassfilt_spades -c defaults -c conda-forge -c bioconda -y spades=4.2.0
 
-conda create -n qassfilt_quast python=3.12 -y
-conda install -n qassfilt_quast -c defaults -c conda-forge -c bioconda -y quast=5.3.0
+mamba create -n qassfilt_quast python=3.12 -y
+mamba install -n qassfilt_quast -c defaults -c conda-forge -c bioconda -y quast=5.3.0
 
-conda create -n qassfilt_seqkit python=3.12 -y
-conda install -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda -y seqkit=2.10.1
+mamba create -n qassfilt_seqkit python=3.12 -y
+mamba install -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda -y seqkit=2.10.1
 
-conda create -n qassfilt_multiqc python=3.12 -y
-conda install -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda -y multiqc=1.31
+mamba create -n qassfilt_multiqc python=3.12 -y
+mamba install -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda -y multiqc=1.31
 
 # Clean conda caches
 conda clean -a -y
