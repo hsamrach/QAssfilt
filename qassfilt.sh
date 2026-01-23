@@ -34,7 +34,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.3
+VERSION_QAssfilt=1.3.4
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -427,7 +427,7 @@ check_envs_and_tools() {
             if [[ "$ENV" == "qassfilt_abricate" || "$ENV" == "qassfilt_abritamr" || "$ENV" == "qassfilt_gtdbtk" || "$ENV" == "qassfilt_kraken2" ]]; then
                 if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
                     echo "[WARN] Environment '$ENV' not found. Creating $ENV..."
-                    conda create -y -n "$ENV" \
+                    mamba create -y -n "$ENV" \
                         || { echo "❌ Failed to create env $ENV"; exit 1; }
                 else
                     echo "✅ Environment '$ENV' exists."
@@ -436,7 +436,7 @@ check_envs_and_tools() {
             # Regular environment creation (includes Python)
             if ! conda env list | awk '{print $1}' | grep -x "${ENV}" >/dev/null; then
                 echo "[WARN] Environment '$ENV' not found. Creating..."
-                conda create -y -n "$ENV" python=3.12 \
+                mamba create -y -n "$ENV" python=3.12 \
                     || { echo "❌ Failed to create env $ENV"; exit 1; }
             else
                 echo "✅ Environment '$ENV' exists."
@@ -538,82 +538,21 @@ check_envs_and_tools() {
             case "$TOOL" in
                 fastp)
                     fastp_version="1.0.1"
-                    [[ -d fastp_dir ]] && rm -rf fastp_dir
-                    fastp_url="http://opengene.org/fastp/fastp.${fastp_version}"
-                    wget -O fastp "${fastp_url}" || { echo "❌ Failed to download fastp"; exit 1; }
-                    chmod a+x ./fastp
-                    mkdir -p "$CONDA_PREFIX/share/fastp/bin"
-                    mv fastp "$CONDA_PREFIX/share/fastp/bin/"
-                    ln -sf "$CONDA_PREFIX/share/fastp/bin/fastp" "$BIN_PATH/fastp"
+                    echo "[INFO] Installing fastp v${fastp_version} in $ENV..."
+                    mamba install -n qassfilt_fastp -c defaults -c conda-forge -c bioconda -y fastp=${fastp_version} || { echo "❌ Failed to install fastp"; exit 1; }
                     ;;
 
                 spades.py)
-                    spades_version="4.2.0"
+                    spades_version="1.1.0"
 
-                    # Detect OS
-                    OS_TYPE=$(uname | tr '[:upper:]' '[:lower:]')
-                    case "$OS_TYPE" in
-                        linux) OS="Linux" ;;
-                        darwin) OS="MacOSX" ;;
-                        *) echo "❌ Unsupported OS: $OS_TYPE"; exit 1 ;;
-                    esac
-
-                    # Detect architecture
-                    ARCH_TYPE=$(uname -m)
-                    case "$ARCH_TYPE" in
-                        x86_64) ARCH="x86_64" ;;
-                        aarch64 | arm64) ARCH="arm64" ;;
-                        *) echo "❌ Unsupported architecture: $ARCH_TYPE"; exit 1 ;;
-                    esac
-
-                    # Construct download folder name and URL
-                    spades_dir="SPAdes-${spades_version}-${OS}"
-                    spades_url="https://github.com/ablab/spades/releases/download/v${spades_version}/${spades_dir}.tar.gz"
-
-                    # Download
-                    wget -O "${spades_dir}.tar.gz" "$spades_url" || { echo "❌ Failed to download SPAdes"; exit 1; }
-
-                    # Extract to temporary directory
-                    tmp_dir=$(mktemp -d)
-                    tar -xzf "${spades_dir}.tar.gz" -C "$tmp_dir" || { echo "❌ Failed to extract SPAdes"; rm -f "${spades_dir}.tar.gz"; exit 1; }
-
-                    # Find extracted SPAdes folder
-                    extracted_dir=$(find "$tmp_dir" -maxdepth 1 -type d -name "SPAdes*" | head -n 1)
-                    if [[ -z "$extracted_dir" ]]; then
-                        echo "❌ SPAdes folder not found after extraction"
-                        rm -rf "$tmp_dir" "${spades_dir}.tar.gz"
-                        exit 1
-                    fi
-
-                    # Ensure CONDA_PREFIX/share exists
-                    mkdir -p "$CONDA_PREFIX/share/"
-
-                    # Move SPAdes to share directory
-                    mv "$extracted_dir" "$CONDA_PREFIX/share/spades"
-
-                    # Symlink spades.py
-                    ln -sf "$CONDA_PREFIX/share/spades/bin/spades.py" "$BIN_PATH/spades.py"
-
-                    # Symlink all other executables in bin/
-                    for exe in "$CONDA_PREFIX/share/spades/bin/"*; do
-                        ln -sf "$exe" "$BIN_PATH/$(basename "$exe")"
-                    done
-
-                    # Cleanup
-                    rm -rf "$tmp_dir" "${spades_dir}.tar.gz"
-
-                    echo "✅ SPAdes v${spades_version} installed to $CONDA_PREFIX/share/spades and linked to $BIN_PATH"
+                    echo "[INFO] Installing SPAdes v${spades_version} in $ENV..."
+                    mamba install -n qassfilt_spades -c defaults -c conda-forge -c bioconda -y spades=4.2.0 || { echo "❌ Failed to install SPAdes"; exit 1; }
                     ;;
 
                 quast.py)
-                    quast_version="quast_5.3.0"
-                    [[ -d quast ]] && rm -rf quast
-                    git clone https://github.com/ablab/quast.git
-                    cd quast || { echo "❌ Failed to enter quast folder"; exit 1; }
-                    git checkout "${quast_version}" || { echo "❌ Version ${quast_version} not found"; exit 1; }
-                    python setup.py install || { echo "❌ QUAST installation failed"; exit 1; }
-                    cd ..
-                    rm -rf quast
+                    quast_version="5.3.0"
+                    echo "[INFO] Installing QUAST v${quast_version} in $ENV..."
+                    mamba install -n qassfilt_quast -c defaults -c conda-forge -c bioconda -y quast=${quast_version} || { echo "❌ Failed to install QUAST"; exit 1; }
                     ;;
 
                 checkm2)
@@ -621,113 +560,54 @@ check_envs_and_tools() {
 
                     echo "[INFO] Installing CheckM2 v${checkm2_version} in $ENV..."
 
-                    # Activate the environment
-                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    mamba install -y -n "$ENV" -c defaults -c conda-forge -c bioconda checkm2=${checkm2_version} || { echo "❌ Failed to install CheckM2"; exit 1; }
 
-                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda checkm2=${checkm2_version}
-
-                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 seqkit)
                     seqkit_version="2.10.1"
+                    echo "[INFO] Installing SeqKit v${seqkit_version} in $ENV..."
 
-                    # Detect OS
-                    OS_TYPE=$(uname | tr '[:upper:]' '[:lower:]')
-                    case "$OS_TYPE" in
-                        linux) OS="linux" ;;
-                        darwin) OS="macos" ;;
-                        *) echo "❌ Unsupported OS: $OS_TYPE"; exit 1 ;;
-                    esac
-
-                    # Detect architecture
-                    ARCH_TYPE=$(uname -m)
-                    case "$ARCH_TYPE" in
-                        x86_64) ARCH="amd64" ;;
-                        aarch64 | arm64) ARCH="arm64" ;;
-                        *) echo "❌ Unsupported architecture: $ARCH_TYPE"; exit 1 ;;
-                    esac
-
-                    # Construct download URL
-                    seqkit_url="https://github.com/shenwei356/seqkit/releases/download/v${seqkit_version}/seqkit_${OS}_${ARCH}.tar.gz"
-
-                    # Download
-                    wget -O seqkit.tar.gz "$seqkit_url" || { echo "❌ Failed to download SeqKit"; exit 1; }
-
-                    # Extract to temporary directory
-                    tmp_dir=$(mktemp -d)
-                    tar -xzf seqkit.tar.gz -C "$tmp_dir" || { echo "❌ Failed to extract SeqKit"; exit 1; }
-
-                    # Find seqkit executable
-                    seqkit_exec=$(find "$tmp_dir" -type f -name "seqkit" | head -n 1)
-                    if [[ -z "$seqkit_exec" ]]; then
-                        echo "❌ seqkit executable not found in the tarball"
-                        rm -rf "$tmp_dir" seqkit.tar.gz
-                        exit 1
-                    fi
-
-                    # Move to BIN_PATH and make executable
-                    mv "$seqkit_exec" "$BIN_PATH/" || { echo "❌ Failed to move seqkit to $BIN_PATH"; exit 1; }
-                    chmod +x "$BIN_PATH/seqkit"
-
-                    # Cleanup
-                    rm -rf "$tmp_dir" seqkit.tar.gz
-
-                    echo "✅ SeqKit v${seqkit_version} installed to $BIN_PATH"
+                    mamba install -n qassfilt_seqkit -c defaults -c conda-forge -c bioconda -y seqkit=${seqkit_version} || { echo "❌ Failed to install SeqKit"; exit 1; }
                     ;;
 
                 abritamr)
-                    abritamr_version="1.0.19"  # Conda uses version without "v"
+                    abritamr_version="1.0.19"
 
                     echo "[INFO] Installing ABRITAMR v${abritamr_version} in $ENV..."
 
-                    # Activate the environment
-                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    mamba install -y -n "$ENV" -c defaults -c conda-forge -c bioconda abritamr=${abritamr_version} || { echo "❌ Failed to install ABRITAMR"; exit 1; }
 
-                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda abritamr=${abritamr_version}
-
-                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 abricate)
                     abricate_version="1.0.1"
                     echo "[INFO] Installing ABRicate v${abricate_version} in $ENV..."
 
-                    # Activate the environment
-                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    mamba install -y -n "$ENV" -c defaults -c bioconda -c conda-forge abricate=${abricate_version} || { echo "❌ Failed to install ABRicate"; exit 1; }
 
-                    conda install -y -n "$ENV" -c defaults -c bioconda -c conda-forge abricate=${abricate_version}
-
-                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 multiqc)
                     multiqc_version="1.31"
-                    pip install "multiqc==${multiqc_version}" || { echo "❌ Failed to install MultiQC"; exit 1; }
+                    echo "[INFO] Installing MultiQC v${multiqc_version} in $ENV..."
+                    mamba install -n qassfilt_multiqc -c defaults -c conda-forge -c bioconda -y multiqc=${multiqc_version} || { echo "❌ Failed to install MultiQC"; exit 1; }
                     ;;
 
                 kraken2)
                     kraken2_version="2.1.6"
                     echo "[INFO] Installing Kraken2 v${kraken2_version} in $ENV..."
 
-                    # Activate the environment
-                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    mamba install -y -n "$ENV" -c defaults -c conda-forge -c bioconda kraken2=${kraken2_version} || { echo "❌ Failed to install Kraken2"; exit 1; }
 
-                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda kraken2=${kraken2_version}
-
-                    conda deactivate >/dev/null 2>&1 || true
                     ;;
 
                 gtdbtk)
                     gtdbtk_version="2.5.2"
                     echo "[INFO] Installing GTDB-Tk v${gtdbtk_version} in $ENV..."
 
-                    # Activate the environment
-                    conda activate "$ENV" >/dev/null 2>&1 || conda activate "$ENV" >/dev/null 2>&1 || { echo "❌ Failed to activate $ENV"; exit 1; }
+                    mamba install -y -n "$ENV" -c defaults -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11 || { echo "❌ Failed to install GTDB-Tk"; exit 1; }
 
-                    conda install -y -n "$ENV" -c defaults -c conda-forge -c bioconda gtdbtk=${gtdbtk_version} python=3.11
-
-                    conda deactivate >/dev/null 2>&1 || true
                     ;;
             esac
             echo "✅ $TOOL installed in $ENV."
@@ -1300,12 +1180,13 @@ process_sample() {
     local R2=$3
 
     # =========================
+    # =========================
     # Directories
     # =========================
     local LOG_DIR="${OUTPUT_PATH}/logs"
     local FASTP_DIR="${OUTPUT_PATH}/fastp_file"
     local SPADES_DIR="${OUTPUT_PATH}/spades_file/${SAMPLE}"
-	local CONTIGS_BEFORE_DIR="${OUTPUT_PATH}/contigs_before"
+    local CONTIGS_BEFORE_DIR="${OUTPUT_PATH}/contigs_before"
     local FILTERED_DIR="${OUTPUT_PATH}/contigs_filtered"
     mkdir -p "$LOG_DIR"
 
@@ -1411,9 +1292,9 @@ process_sample() {
             fi
         fi
 
-		# =========================
-		# 3. QUAST BEFORE FILTERING
-		# =========================
+        # =========================
+        # 3. QUAST BEFORE FILTERING
+        # =========================
 		if is_skipped "QUAST-b"; then
 			update_status "$SAMPLE" "QUAST-b" "SKIPPED"
 		elif [[ -s "$CONTIGS_BEFORE" ]]; then
@@ -1436,13 +1317,20 @@ process_sample() {
 				local OUTDIR_QUAST="${OUTPUT_PATH}/quast_before/${SAMPLE}"
 				mkdir -p "$OUTDIR_QUAST"
 
-				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS --reference "$QUAST_REFERENCE" "$CONTIGS_BEFORE" --min-contig 1 \
-						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
-				else
-					quast.py -o "$OUTDIR_QUAST" -t $THREADS "$CONTIGS_BEFORE" --min-contig 1 \
-						>"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
-				fi
+                if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
+                    quast.py -o "$OUTDIR_QUAST" \
+                        -t $THREADS \
+                        --reference "$QUAST_REFERENCE" \
+                        "$CONTIGS_BEFORE" \
+                        --min-contig 1 \
+                        >"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
+                else
+                    quast.py -o "$OUTDIR_QUAST" \
+                        -t $THREADS \
+                        "$CONTIGS_BEFORE" \
+                        --min-contig 1 \
+                        >"$LOG_DIR/${SAMPLE}_quast_before.log" 2>&1
+                fi
 
 				QUASTB_EXIT=$?
 				conda deactivate >/dev/null 2>&1 || true
@@ -1773,14 +1661,16 @@ for SAMPLE in "${SAMPLES[@]}"; do
             if (( RUNNING_JOBS < MAX_JOBS )); then
                 break
             fi
-            sleep 1
+            wait -n
         done
 
+       (
         export OMP_NUM_THREADS="$THREADS_PER_JOB"
         export MKL_NUM_THREADS="$THREADS_PER_JOB"
         export OPENBLAS_NUM_THREADS="$THREADS_PER_JOB"
 
-        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2" &
+        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2"
+       ) &
         sleep 0.5
         continue
     fi
@@ -1805,14 +1695,16 @@ for SAMPLE in "${SAMPLES[@]}"; do
             if (( RUNNING_JOBS < MAX_JOBS )); then
                 break
             fi
-            sleep 1
+            wait -n
         done
 
+       (
         export OMP_NUM_THREADS="$THREADS_PER_JOB"
         export MKL_NUM_THREADS="$THREADS_PER_JOB"
         export OPENBLAS_NUM_THREADS="$THREADS_PER_JOB"
 
-        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2" &
+        THREADS="$THREADS_PER_JOB" process_sample "$SAMPLE" "$R1" "$R2"
+       ) &
         sleep 0.5
 
     # ----------------------------------------------------
@@ -1827,23 +1719,10 @@ for SAMPLE in "${SAMPLES[@]}"; do
 
 done
 
+# =========================
+# Wait for all background jobs to finish
+# =========================
 wait
-
-# Auto resume to secure all sample finish
-ORIGINAL_COMMAND="$0 $@"
-
-# Only trigger resume in competitive mode (one-time only)
-if [[ "${COMPETITIVE_MODE:-0}" -eq 1 ]] && [[ -z "${AUTO_RESUME_DONE:-}" ]]; then
-
-    # Mark as already auto-resumed to prevent infinite loop
-    export AUTO_RESUME_DONE=1
-
-    # Only run if ORIGINAL_COMMAND is set
-    if [[ -n "${ORIGINAL_COMMAND:-}" ]]; then
-        # rerun in background to avoid blocking
-        bash -c "bash ${ORIGINAL_COMMAND}"
-    fi
-fi
 
 # Wrapper helper: if in competitive mode, we wrap inside a function
 wrap_if_competitive() {
@@ -2595,7 +2474,7 @@ h1 {{ border-bottom:3px solid #16a085; }}
 {''.join([f'<th>{c}</th>' for c in df.columns])}
 </tr>
 <tr>
-{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
+{''.join(['<th><input type="text" placeholder="🔎︎"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
 </tr>
 </thead>
 <tbody>
@@ -2615,11 +2494,13 @@ html += """
 
 <script>
 $(document).ready(function() {
+
     var table = $('#table').DataTable({
         pageLength: 25,
         orderCellsTop: true,
-        colReorder: true, // draggable columns
+        colReorder: true,
         colResize: true,
+
         dom: "<'dt-buttons-container'B>rt<'length-container'l><'table-info'i><'pagination'p>",
         buttons: [
             'copyHtml5',
@@ -2628,43 +2509,62 @@ $(document).ready(function() {
             'pdfHtml5',
             'print'
         ],
-        colResize: true,  // Enable resizing
-        initComplete: function() {
+
+        initComplete: function () {
             var api = this.api();
 
-            api.columns().every(function(i) {
+            api.columns().every(function (i) {
                 var column = this;
-                var header = $(column.header()).parent().next().children().eq(i);
 
-                var select = header.find('select');
+                // second header row cell
+                var headerCell = $(column.header())
+                    .closest('thead')
+                    .find('tr:eq(1) th:eq(' + i + ')');
+
+                var input  = headerCell.find('input');
+                var select = headerCell.find('select');
+
+                /* ---------- TEXT SEARCH ---------- */
+                input.on('keyup change clear', function () {
+                    if (column.search() !== this.value) {
+                        column.search(this.value, false, true).draw();
+                    }
+                });
+
+                /* ---------- SELECT2 FILTER ---------- */
                 select.select2({
-                    placeholder: "Filter by " + column.header().textContent,
+                    placeholder: "Filter ⌵",
                     allowClear: true,
                     closeOnSelect: false,
                     width: 'resolve'
                 });
-                column.data().unique().sort().each(function(d) {
-                    if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
+
+                column.data().unique().sort().each(function (d) {
+                    if (d !== "") {
+                        select.append(
+                            '<option value="' + d + '">' + d + '</option>'
+                        );
+                    }
                 });
 
-                select.on('change', function() {
-                var values = $(this).val();   // array of selected values
+                select.on('change', function () {
+                    var values = $(this).val();
 
-                if (!values || values.length === 0 || values.includes("")) {
-                    column.search('').draw();
-                    return;
-                }
+                    if (!values || values.length === 0 || values.includes("")) {
+                        column.search('').draw();
+                        return;
+                    }
 
-                // Build exact-match regex: ^val1$|^val2$|^val3$
-                var regex = values
-                    .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
-                    .join('|');
+                    var regex = values
+                        .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
+                        .join('|');
 
-                column.search(regex, true, false).draw();  // regex=true, smart=false
+                    column.search(regex, true, false).draw();
                 });
             });
         }
     });
+
 });
 </script>
 </body>
@@ -2879,7 +2779,7 @@ h1 {{ border-bottom:3px solid #16a085; }}
 {''.join([f'<th>{c}</th>' for c in df.columns])}
 </tr>
 <tr>
-{''.join([f'<th><input type="text" placeholder="Search {c}"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
+{''.join(['<th><input type="text" placeholder="🔎︎"><br><select class="multi-select" multiple style="width:100%"><option value="">All</option></select></th>' for c in df.columns])}
 </tr>
 </thead>
 <tbody>
@@ -2899,11 +2799,13 @@ html += """
 
 <script>
 $(document).ready(function() {
+
     var table = $('#table').DataTable({
         pageLength: 25,
         orderCellsTop: true,
-        colReorder: true, // draggable columns
+        colReorder: true,
         colResize: true,
+
         dom: "<'dt-buttons-container'B>rt<'length-container'l><'table-info'i><'pagination'p>",
         buttons: [
             'copyHtml5',
@@ -2912,43 +2814,62 @@ $(document).ready(function() {
             'pdfHtml5',
             'print'
         ],
-        colResize: true,  // Enable resizing
-        initComplete: function() {
+
+        initComplete: function () {
             var api = this.api();
 
-            api.columns().every(function(i) {
+            api.columns().every(function (i) {
                 var column = this;
-                var header = $(column.header()).parent().next().children().eq(i);
 
-                var select = header.find('select');
+                // second header row cell
+                var headerCell = $(column.header())
+                    .closest('thead')
+                    .find('tr:eq(1) th:eq(' + i + ')');
+
+                var input  = headerCell.find('input');
+                var select = headerCell.find('select');
+
+                /* ---------- TEXT SEARCH ---------- */
+                input.on('keyup change clear', function () {
+                    if (column.search() !== this.value) {
+                        column.search(this.value, false, true).draw();
+                    }
+                });
+
+                /* ---------- SELECT2 FILTER ---------- */
                 select.select2({
-                    placeholder: "Filter by " + column.header().textContent,
+                    placeholder: "Filter ⌵",
                     allowClear: true,
                     closeOnSelect: false,
                     width: 'resolve'
                 });
-                column.data().unique().sort().each(function(d) {
-                    if(d !== "") select.append('<option value="'+d+'">'+d+'</option>');
+
+                column.data().unique().sort().each(function (d) {
+                    if (d !== "") {
+                        select.append(
+                            '<option value="' + d + '">' + d + '</option>'
+                        );
+                    }
                 });
 
-                select.on('change', function() {
-                var values = $(this).val();   // array of selected values
+                select.on('change', function () {
+                    var values = $(this).val();
 
-                if (!values || values.length === 0 || values.includes("")) {
-                    column.search('').draw();
-                    return;
-                }
+                    if (!values || values.length === 0 || values.includes("")) {
+                        column.search('').draw();
+                        return;
+                    }
 
-                // Build exact-match regex: ^val1$|^val2$|^val3$
-                var regex = values
-                    .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
-                    .join('|');
+                    var regex = values
+                        .map(v => '^' + $.fn.dataTable.util.escapeRegex(v) + '$')
+                        .join('|');
 
-                column.search(regex, true, false).draw();  // regex=true, smart=false
+                    column.search(regex, true, false).draw();
                 });
             });
         }
     });
+
 });
 </script>
 </body>
@@ -3024,3 +2945,5 @@ echo ""
 printf "%-18s : %s\n" "Please find the output here"              "$(realpath -m "$OUTPUT_PATH")"
 echo ""
 echo "All rights reserved. © 2025 QAssfilt v${VERSION_QAssfilt}, Samrach Han" | tee -a $PARAM_LOG
+echo ""
+echo "Citation: Han S., Khan F., Guillard B., Cheng S., Rahi P. (2025). QAssfilt Pipeline. GitHub: https://github.com/hsamrach/QAssfilt" | tee -a $PARAM_LOG
