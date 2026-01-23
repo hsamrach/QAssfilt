@@ -61,6 +61,13 @@ The installation above is for Linux OS only. If you are using others, please fin
 Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
 conda install -n base -c samrachhan11 qassfilt=1.3.4 -y #latest version
+```
+Or
+```
+mamba install -n base -c samrachhan11 qassfilt=1.3.4 -y #latest version
+```
+Test it with help option
+```
 qassfilt -h # to show help
 ```
 Otherwise, you could install QAssfilt through git clone also:
