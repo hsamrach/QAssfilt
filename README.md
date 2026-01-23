@@ -27,7 +27,7 @@ qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_datab
 While running, QAssfilt will update the progression for the user to be trackable.
 # Installation
 ## Conda installation
-Before installing QAssfilt, you have to had conda installed in your terminal. If you are new to conda, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
+Before installing QAssfilt, you have to had conda and mamba installed in your terminal. If you are new to conda and mamba, we suggest following the few steps below (credited to: [Koen-vdl](https://github.com/Koen-vdl/Conda-and-Bioconda-tutorial)) :
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
@@ -48,7 +48,11 @@ Update to the latest version of conda:
 ```
 conda update -n base -c defaults conda
 ```
-Now you have your conda installed and activated via miniconda3.
+Now you can install mamba:
+```
+conda install -n base -c conda-forge mamba
+```
+Now you have your conda and mamba installed and activated via miniconda3. (You can also install [Miniforge3](https://github.com/conda-forge/miniforge/releases) so that you can have both conda and mamba installed directly)
 
 Note: You can also run the QAssfilt pipeline without activating Conda.
 
