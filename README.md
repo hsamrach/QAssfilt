@@ -253,7 +253,7 @@ Use this option if you already have the CheckM2 database, so it won’t download
 
 Note: please store only one (.dmnd) file in the database directory.
 ##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
-By default, these tools were skipped. Once they are triggered, the workflow will include them.
+By default, these tools were skipped. Once they are triggered by providing an option or databases (see help information), the workflow will include them.
 
 Users have to had Kraken2 and GTDB-TK database downloaded. Otherwise, you can download through the link below:
 ```
