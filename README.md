@@ -8,7 +8,7 @@ QAssfilt works only via Conda and is designed specifically for Illumina paired-e
 # QAssfilt workflow
 ![Logo](QAssfilt_Pipeline_Workflow.png)
 # Quick guide
-Initialization is needed after installing QAssfilt. Please see [Initialization](https://github.com/hsamrach/QAssfilt#initialization) section.
+Initialization is needed after installing QAssfilt. Please see [Initialization](#initialization) section.
 ```
 # Basicer
 qassfilt -i /path/input_dir -o /path/output_dir -t 16
