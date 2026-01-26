@@ -5,6 +5,20 @@
 QAssfilt is a ready-to-use genome assembly filtering pipeline that provides high-quality contigs, ensuring confidence in your downstream analyses. Qassfilt is an independent, tool-based conda environment that is rapidly analyzed, highly automated, and flexible, allowing users to work independently with their preferred version of each dependency tool. The user could be employed with all kinds of Illumina paired-end reads. The complete QAssfilt workflow includes [fastp](https://github.com/OpenGene/fastp) for trimming and assessing the quality of FASTQ files, [SPAdes](https://github.com/ablab/spades) as the assembler, [QUAST](https://github.com/ablab/quast) and [CheckM2](https://github.com/chklovski/CheckM2) for evaluating the quality of assembled and filtered genomes, [SeqKit](https://github.com/shenwei356/seqkit) for filtering contigs from assembled genomes based on contig coverage and length (bp), [Kraken2](https://github.com/DerrickWood/kraken2) and [GTDB-Tk](https://github.com/Ecogenomics/GTDBTk) for speciations, [ABRitAMR](https://github.com/MDU-PHL/abritamr) and [ABRicate](https://github.com/tseemann/abricate) for antimicrobial resistance genes, plasmid genes, and virulence factor detection, and finally [MultiQC](https://github.com/MultiQC/MultiQC) for aggregating and visualizing reports. For those who worry a lot about the quality of the genome (contamination or misassemblies), running QAssfilt will help remove these issues.
 # Developer summary
 QAssfilt works only via Conda and is designed specifically for Illumina paired-end reads. It was built from the idea of creating the environment and tool independently to avoid conflicts between dependency tool versions that could interfere with the analysis (credited to [bohra](https://github.com/MDU-PHL/bohra)). Moreover, it allows users to use their preferred version of the dependency tools without needing an upgrade from the developer, and also build their own container, if highly reproducible is preferred.
+# Outlines
+  - [QAssfilt workflow](#qassfilt-workflow)
+  - [Quick guide](#quick-guide)
+  - [Progressing status](#progressing-status)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Initialization](#initialization)
+  - [Input file format](#input-file-format---input_path--i)
+  - [Output file and directory](#output-file-and-directory---output_path--o)
+  - [Options and Parameters](#options-and-parameters)
+  - [Resume function](#resume-function)
+  - [Dependencies](#dependencies)
+  - [Container](#container)
+  - [Information](#information)
 # QAssfilt workflow
 ![Logo](QAssfilt_Pipeline_Workflow.png)
 # Quick guide
