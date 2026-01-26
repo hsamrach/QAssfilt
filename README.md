@@ -50,7 +50,7 @@ conda update -n base -c defaults conda
 ```
 Now you can install mamba:
 ```
-conda install -n base -c conda-forge mamba
+conda install -n base -c conda-forge mamba -y
 ```
 Now you have your conda and mamba installed and activated via miniconda3. (You can also install [Miniforge3](https://github.com/conda-forge/miniforge/releases) so that you can have both conda and mamba installed directly)
 
