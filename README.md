@@ -187,42 +187,33 @@ During and after running, QAssfilt will produce:
 ```
 output_dir/
 |
-├── logs: Log file of each step run, including errors and information in detail.
-|
-├── spades_file: Raw output directory of each sample of the spades step.
-|
+├── fastp_file: Trimmed fastq files of each sample.
 ├── contigs_before: Original contig files from SPAdes, renamed based on sample ID (before filtering).
-|
-├── contigs_filtered: filtered contig files of each sample ID.
-|
-├── quast_before: Quast output from unfiltered contig files.
-├── quast_after: Quast output from filtered contig files.
-|
-├── checkm2_before: CheckM2 output from unfiltered contig files.
-├── checkm2_after: CheckM2 output from filtered contig files.
-|
-├── kraken2: kraken2 output from filtered contig files. (before and after)
-|
-├── gtdbtk:
-│   ├── before: GTDB-TK output before filtering.
-│   └── after: GTDB-TK output after filtering.
-|
-├── abricate: the output of the abricate run in all available databases. (before and after)
-|
-├── abritamr:
-│   ├── before: abritamr output before filtering.
-│   └── after: abritamr output after filtering.
-|
+├── contigs_filtered: Filtered contig files of each sample.
 ├── multiqc_reports: HTML reports of each tool.
 │   ├── QAssfilt_Fastp_MultiQC_Report.html
 │   └── QAssfilt_QUAST_CheckM2_MultiQC_Report.html
 │   └── QAssfilt_GTDB-Tk_Kraken2_MultiQC_Report.html
 │   └── QAssfilt_Abricate_Report.html
 │   └── QAssfilt_abritAMR_Report.html
-│
+├── logs: Log file of each step run, including errors and information in detail.
 ├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
-|
-└── pipeline_parameters.txt: Options, parameters, time consumed, and version used in pipeline.
+├── pipeline_parameters.txt: Options, parameters, time consumed, and version used in pipeline.
+│
+└── raw/
+    ├── spades_file: Raw output directory of each sample of the spades step.
+    ├── quast_before: Quast output before filtering.
+    ├── quast_after: Quast output after filtering.
+    ├── checkm2_before: CheckM2 output before filtering.
+    ├── checkm2_after: CheckM2 output after filtering.
+    ├── kraken2: kraken2 output of each sample. (before and after)
+    ├── gtdbtk:
+    │   ├── before: GTDB-TK output before filtering.
+    │   └── after: GTDB-TK output after filtering.
+    ├── abricate: the output of the abricate run in all available databases. (before and after)
+    └── abritamr:
+        ├── before: abritamr output before filtering.
+        └── after: abritamr output after filtering.
 ```
 ## Options and Parameters
 ##### --source_conda, -sc
