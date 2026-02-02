@@ -34,7 +34,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.4
+VERSION_QAssfilt=1.3.5
 KRAKEN2_DB_PATH="0"
 GTDBTK_DB_PATH="0"
 CHECKM2DB_PATH=""
@@ -629,8 +629,6 @@ check_envs_and_tools() {
                     echo "✅ Found CheckM2 DB in $CHECKM2_DB"
                 fi
             fi
-            export CHECKM2DB="$CHECKM2_DB"
-            echo "🔗 Exported CHECKM2DB=$CHECKM2DB"
         fi
 
         conda deactivate >/dev/null 2>&1 || true
@@ -1185,7 +1183,7 @@ process_sample() {
     # =========================
     local LOG_DIR="${OUTPUT_PATH}/logs"
     local FASTP_DIR="${OUTPUT_PATH}/fastp_file"
-    local SPADES_DIR="${OUTPUT_PATH}/spades_file/${SAMPLE}"
+    local SPADES_DIR="${OUTPUT_PATH}/raw/spades_file/${SAMPLE}"
     local CONTIGS_BEFORE_DIR="${OUTPUT_PATH}/contigs_before"
     local FILTERED_DIR="${OUTPUT_PATH}/contigs_filtered"
     mkdir -p "$LOG_DIR"
@@ -1299,7 +1297,7 @@ process_sample() {
 			update_status "$SAMPLE" "QUAST-b" "SKIPPED"
 		elif [[ -s "$CONTIGS_BEFORE" ]]; then
 			# Run QUAST-b if CONTIGS_BEFORE exists and step should run
-			if should_run_step "$SAMPLE" "QUAST-b" || [[ ! -s "${OUTPUT_PATH}/quast_before/${SAMPLE}/report.tsv" ]]; then
+			if should_run_step "$SAMPLE" "QUAST-b" || [[ ! -s "${OUTPUT_PATH}/raw/quast_before/${SAMPLE}/report.tsv" ]]; then
 				update_status "$SAMPLE" "QUAST-b" "RUNNING"
 
 				conda activate qassfilt_quast >/dev/null 2>&1
@@ -1314,7 +1312,7 @@ process_sample() {
                     fi
                 fi
 
-				local OUTDIR_QUAST="${OUTPUT_PATH}/quast_before/${SAMPLE}"
+				local OUTDIR_QUAST="${OUTPUT_PATH}/raw/quast_before/${SAMPLE}"
 				mkdir -p "$OUTDIR_QUAST"
 
                 if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
@@ -1348,7 +1346,7 @@ process_sample() {
 			update_status "$SAMPLE" "CHECKM2-b" "SKIPPED"
 		elif [[ -s "$CONTIGS_BEFORE" ]]; then
 			# Run CHECKM2-b if CONTIGS_BEFORE exists and step should run
-			if should_run_step "$SAMPLE" "CHECKM2-b" || [[ ! -s "${OUTPUT_PATH}/checkm2_before/${SAMPLE}/quality_report.tsv" ]]; then
+			if should_run_step "$SAMPLE" "CHECKM2-b" || [[ ! -s "${OUTPUT_PATH}/raw/checkm2_before/${SAMPLE}/quality_report.tsv" ]]; then
 				update_status "$SAMPLE" "CHECKM2-b" "RUNNING"
 
 				conda activate qassfilt_checkm2 >/dev/null 2>&1
@@ -1376,7 +1374,7 @@ process_sample() {
 					$DB_ARG \
 					--input "$CONTIGS_BEFORE" \
 					--force \
-					--output-directory "${OUTPUT_PATH}/checkm2_before/${SAMPLE}" \
+					--output-directory "${OUTPUT_PATH}/raw/checkm2_before/${SAMPLE}" \
 					>"$LOG_FILE" 2>&1
 
 				CHECKM2B_EXIT=$?
@@ -1458,7 +1456,7 @@ process_sample() {
 			update_status "$SAMPLE" "QUAST-a" "SKIPPED"
 		elif [[ -s "$OUTFILTER" ]]; then
 			# Rerun QUAST if report missing or empty
-			if should_run_step "$SAMPLE" "QUAST-a" || [[ ! -s "${OUTPUT_PATH}/quast_after/${SAMPLE}/report.tsv" ]]; then
+			if should_run_step "$SAMPLE" "QUAST-a" || [[ ! -s "${OUTPUT_PATH}/raw/quast_after/${SAMPLE}/report.tsv" ]]; then
 				update_status "$SAMPLE" "QUAST-a" "RUNNING"
 
 				conda activate qassfilt_quast >/dev/null 2>&1
@@ -1473,7 +1471,7 @@ process_sample() {
                     fi
                 fi
 
-				local OUTDIR_QUAST="${OUTPUT_PATH}/quast_after/${SAMPLE}"
+				local OUTDIR_QUAST="${OUTPUT_PATH}/raw/quast_after/${SAMPLE}"
 				mkdir -p "$OUTDIR_QUAST"
 
 				if [[ -n "${QUAST_REFERENCE:-}" && -f "$QUAST_REFERENCE" ]]; then
@@ -1499,7 +1497,7 @@ process_sample() {
 			update_status "$SAMPLE" "CHECKM2-a" "SKIPPED"
 		elif [[ -s "$OUTFILTER" ]]; then
 			# Run CHECKM2-a if OUTFILTER exists and step should run
-			if should_run_step "$SAMPLE" "CHECKM2-a" || [[ ! -s "${OUTPUT_PATH}/checkm2_after/${SAMPLE}/quality_report.tsv" ]]; then
+			if should_run_step "$SAMPLE" "CHECKM2-a" || [[ ! -s "${OUTPUT_PATH}/raw/checkm2_after/${SAMPLE}/quality_report.tsv" ]]; then
 				update_status "$SAMPLE" "CHECKM2-a" "RUNNING"
 
 				conda activate qassfilt_checkm2 >/dev/null 2>&1
@@ -1527,7 +1525,7 @@ process_sample() {
 					$DB_ARG \
 					--input "$OUTFILTER" \
 					--force \
-					--output-directory "${OUTPUT_PATH}/checkm2_after/${SAMPLE}" \
+					--output-directory "${OUTPUT_PATH}/raw/checkm2_after/${SAMPLE}" \
 					>"$LOG_FILE" 2>&1
 
 				CHECKM2B_EXIT=$?
@@ -1549,11 +1547,11 @@ process_sample() {
                 update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
             else
                 local KRAKENLOG="${LOG_DIR}/${SAMPLE}_kraken2.log"
-                mkdir -p "${OUTPUT_PATH}/kraken2/"
+                mkdir -p "${OUTPUT_PATH}/raw/kraken2/"
 
             # --- Run on CONTIGS_BEFORE ---
-            local KRAKEN2_BEFORE_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}.output"
-            local KRAKEN2_BEFORE_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}.report"
+            local KRAKEN2_BEFORE_OUT="${OUTPUT_PATH}/raw/kraken2/${SAMPLE}.output"
+            local KRAKEN2_BEFORE_REPORT="${OUTPUT_PATH}/raw/kraken2/${SAMPLE}.report"
 
             if is_skipped "KRAKEN2-b"; then
             update_status "$SAMPLE" "KRAKEN2-b" "SKIPPED"
@@ -1589,8 +1587,8 @@ process_sample() {
             fi
 
             # --- Run on OUTFILTER ---
-            local KRAKEN2_AFTER_OUT="${OUTPUT_PATH}/kraken2/${SAMPLE}_filtered.output"
-            local KRAKEN2_AFTER_REPORT="${OUTPUT_PATH}/kraken2/${SAMPLE}_filtered.report"
+            local KRAKEN2_AFTER_OUT="${OUTPUT_PATH}/raw/kraken2/${SAMPLE}_filtered.output"
+            local KRAKEN2_AFTER_REPORT="${OUTPUT_PATH}/raw/kraken2/${SAMPLE}_filtered.report"
 
             if is_skipped "KRAKEN2-a"; then
             update_status "$SAMPLE" "KRAKEN2-a" "SKIPPED"
@@ -1750,13 +1748,13 @@ $body
                 update_status "$SAMPLE" "GTDBTK-a" "SKIPPED"
             else
                 GTDBTKLOG="${OUTPUT_PATH}/logs/gtdbtk.log"
-                mkdir -p "${OUTPUT_PATH}/gtdbtk/"
+                mkdir -p "${OUTPUT_PATH}/raw/gtdbtk/"
                 export GTDBTK_DATA_PATH="$GTDBTK_DB_PATH"
 
         wrap_if_competitive run_gtdbtk_before << 'EOF'
             # --- Run on CONTIGS_BEFORE_GTDBTK ---
             CONTIGS_BEFORE_GTDBTK="${OUTPUT_PATH}/contigs_before"
-            GTDBTK_BEFORE_DIR="${OUTPUT_PATH}/gtdbtk/before"
+            GTDBTK_BEFORE_DIR="${OUTPUT_PATH}/raw/gtdbtk/before"
             mkdir -p "$GTDBTK_BEFORE_DIR"
             if is_skipped "GTDBTK-b"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
@@ -1822,7 +1820,7 @@ EOF
             wrap_if_competitive run_gtdbtk_after << 'EOF'
             # --- Run on OUTFILTER_GTDBTK ---
             OUTFILTER_GTDBTK="${OUTPUT_PATH}/contigs_filtered/"
-            GTDBTK_AFTER_DIR="${OUTPUT_PATH}/gtdbtk/after"
+            GTDBTK_AFTER_DIR="${OUTPUT_PATH}/raw/gtdbtk/after"
             mkdir -p "$GTDBTK_AFTER_DIR"
             if is_skipped "GTDBTK-a"; then
                 for SAMPLE in "${SAMPLES[@]}"; do
@@ -1886,10 +1884,10 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
     ABRITAMRLOG="${OUTPUT_PATH}/logs/abritamr.log"
 
     mkdir -p "$(dirname "$ABRITAMRLOG")"
-    mkdir -p "${OUTPUT_PATH}/abritamr"
+    mkdir -p "${OUTPUT_PATH}/raw/abritamr"
 
     CONTIGS_BEFORE_ABRITAMR="${OUTPUT_PATH}/contigs_before"
-    ABRITAMR_BEFORE_OUT="${OUTPUT_PATH}/abritamr/before"
+    ABRITAMR_BEFORE_OUT="${OUTPUT_PATH}/raw/abritamr/before"
 
     if is_skipped "ABRITAMR-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
@@ -1946,7 +1944,7 @@ if [[ "${ABRITAMR_MODE:-0}" -eq 1 ]]; then
 
     # --- Run on OUTFILTER ---
     OUTFILTER_ABRITAMR="${OUTPUT_PATH}/contigs_filtered/"
-    ABRITAMR_AFTER_OUT="${OUTPUT_PATH}/abritamr/after"
+    ABRITAMR_AFTER_OUT="${OUTPUT_PATH}/raw/abritamr/after"
 
     if is_skipped "ABRITAMR-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
@@ -2007,18 +2005,18 @@ wrap_if_competitive run_abricate << 'EOF'
 # =========================
 if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
     ABRICATELOG="${OUTPUT_PATH}/logs/abricate.log"
-    mkdir -p "${OUTPUT_PATH}/abricate/"
+    mkdir -p "${OUTPUT_PATH}/raw/abricate/"
 
     # --- Run on CONTIGS_BEFORE_ABRICATE ---
     shopt -s nullglob; CONTIGS_BEFORE_ABRICATE=( "$OUTPUT_PATH/contigs_before/"*.fa "$OUTPUT_PATH/contigs_before/"*.fna "$OUTPUT_PATH/contigs_before/"*.fasta "$OUTPUT_PATH/contigs_before/"*.fas "$OUTPUT_PATH/contigs_before/"*.ffn ); shopt -u nullglob
-    ABRICATE_BEFORE_PREFIX="${OUTPUT_PATH}/abricate/before"
+    ABRICATE_BEFORE_PREFIX="${OUTPUT_PATH}/raw/abricate/before"
 
     if is_skipped "ABRICATE-b"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRICATE-b" "SKIPPED"
         done
     elif (( ${#CONTIGS_BEFORE_ABRICATE[@]} > 0 )); then
-        if should_run_step "$SAMPLE" "ABRICATE-b" || [[ ! -s "${OUTPUT_PATH}/abricate/before_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/before_vfdb.summary.tsv" ]]; then
+        if should_run_step "$SAMPLE" "ABRICATE-b" || [[ ! -s "${OUTPUT_PATH}/raw/abricate/before_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-b" "RUNNING"
             conda activate qassfilt_abricate >/dev/null 2>&1
                 if [[ $? -ne 0 ]]; then
@@ -2066,14 +2064,14 @@ if [[ "${ABRICATE_MODE:-0}" -eq 1 ]]; then
 
     # --- Run on OUTFILTER_ABRICATE ---
     shopt -s nullglob; OUTFILTER_ABRICATE=( "${OUTPUT_PATH}/contigs_filtered/"*.fa "${OUTPUT_PATH}/contigs_filtered/"*.fna "${OUTPUT_PATH}/contigs_filtered/"*.fasta "${OUTPUT_PATH}/contigs_filtered/"*.fas "${OUTPUT_PATH}/contigs_filtered/"*.ffn ); shopt -u nullglob
-    ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/abricate/filtered"
+    ABRICATE_AFTER_PREFIX="${OUTPUT_PATH}/raw/abricate/filtered"
 
     if is_skipped "ABRICATE-a"; then
         for SAMPLE in "${SAMPLES[@]}"; do
             update_status "$SAMPLE" "ABRICATE-a" "SKIPPED"
         done
     elif (( ${#OUTFILTER_ABRICATE[@]} > 0 )); then
-        if should_run_step "$SAMPLE" "ABRICATE-a" || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_plasmidfinder.summary.tsv" ]] || [[ ! -s "${OUTPUT_PATH}/abricate/filtered_vfdb.summary.tsv" ]]; then
+        if should_run_step "$SAMPLE" "ABRICATE-a" || [[ ! -s "${OUTPUT_PATH}/raw/abricate/filtered_vfdb.summary.tsv" ]]; then
             update_status "$SAMPLE" "ABRICATE-a" "RUNNING"
 
             conda activate qassfilt_abricate >/dev/null 2>&1
@@ -2274,10 +2272,10 @@ EOF
 
     # --- Combined QC MultiQC (QUAST + CheckM2) ---
     QC_DIRS=()
-    [[ -d "${OUTPUT_PATH}/quast_before" ]]   && QC_DIRS+=("${OUTPUT_PATH}/quast_before")
-    [[ -d "${OUTPUT_PATH}/quast_after" ]]    && QC_DIRS+=("${OUTPUT_PATH}/quast_after")
-    [[ -d "${OUTPUT_PATH}/checkm2_before" ]] && QC_DIRS+=("${OUTPUT_PATH}/checkm2_before")
-    [[ -d "${OUTPUT_PATH}/checkm2_after" ]]  && QC_DIRS+=("${OUTPUT_PATH}/checkm2_after")
+    [[ -d "${OUTPUT_PATH}/raw/quast_before" ]]   && QC_DIRS+=("${OUTPUT_PATH}/raw/quast_before")
+    [[ -d "${OUTPUT_PATH}/raw/quast_after" ]]    && QC_DIRS+=("${OUTPUT_PATH}/raw/quast_after")
+    [[ -d "${OUTPUT_PATH}/raw/checkm2_before" ]] && QC_DIRS+=("${OUTPUT_PATH}/raw/checkm2_before")
+    [[ -d "${OUTPUT_PATH}/raw/checkm2_after" ]]  && QC_DIRS+=("${OUTPUT_PATH}/raw/checkm2_after")
 
     if [[ ${#QC_DIRS[@]} -gt 0 ]]; then
         mkdir -p "${OUTPUT_PATH}/multiqc_reports"
@@ -2293,8 +2291,8 @@ EOF
     # --- Combined Kraken2 + GTDB-Tk MultiQC ---
     MULTIQC_INPUTS=()
 
-    [[ -d "${OUTPUT_PATH}/kraken2" ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/kraken2")
-    [[ -d "${OUTPUT_PATH}/gtdbtk"  ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/gtdbtk")
+    [[ -d "${OUTPUT_PATH}/raw/kraken2" ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/raw/kraken2")
+    [[ -d "${OUTPUT_PATH}/raw/gtdbtk"  ]] && MULTIQC_INPUTS+=("${OUTPUT_PATH}/raw/gtdbtk")
 
     if (( ${#MULTIQC_INPUTS[@]} > 0 )); then
         mkdir -p "${OUTPUT_PATH}/multiqc_reports"
@@ -2310,7 +2308,7 @@ EOF
     fi
 
 # --- Abricate MultiQC (Flat format - shows all data) ---
-if [[ -d "${OUTPUT_PATH}/abricate" ]]; then
+if [[ -d "${OUTPUT_PATH}/raw/abricate" ]]; then
     mkdir -p "${OUTPUT_PATH}/multiqc_reports"
     rm -f "${OUTPUT_PATH}/multiqc_reports/abricate_combined.tsv"
     ABRICATE_COMBINED="${OUTPUT_PATH}/multiqc_reports/abricate_combined.tsv"
@@ -2322,7 +2320,7 @@ shopt -s nullglob
 # First, collect all data into a temporary file
 TEMP_FILE=$(mktemp)
 
-for file in "${OUTPUT_PATH}/abricate/"*.tsv; do
+for file in "${OUTPUT_PATH}/raw/abricate/"*.tsv; do
     [[ "$file" == *.summary.tsv ]] && continue
 
     tail -n +2 "$file" | \
@@ -2580,7 +2578,7 @@ fi
 # ===============================
 # ABRITAMR HTML reports
 # ===============================
-ABRITAMR_DIR="${OUTPUT_PATH}/abritamr"
+ABRITAMR_DIR="${OUTPUT_PATH}/raw/abritamr"
 REPORT_DIR="${OUTPUT_PATH}/multiqc_reports"
 
 ABRITAMR_COMBINED="${REPORT_DIR}/abritamr_combined.tsv"
@@ -2900,7 +2898,7 @@ fi
     fi
 fi
 
-ABR_DIR="$OUTPUT_PATH/abritamr"
+ABR_DIR="$OUTPUT_PATH/raw/abritamr"
 
 if [[ -d "$ABR_DIR" ]]; then
     for sub in before after; do
