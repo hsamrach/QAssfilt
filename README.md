@@ -36,7 +36,7 @@ qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_datab
 qassfilt -i /path/input_dir -o /path/output_dir -cd /path/database/CheckM2_database -cp -id 3 --fastp "-q 30 -u 30" --spades "--isolate" -kd /path/kraken2_database/ -gd /path/gtdbtk_database/ --abritamr "-j 16" --abricate "--minid 80 --mincov 80" -t 32 -mc 50 -ml 1000 --skip "FASTP"
 ```
 # Progressing status
-<img src="Status_streaming.PNG" alt="Logo" width="400">
+<img src="Status_streaming.PNG" alt="Logo" width="600">
 
 While running, QAssfilt will update the progression for the user to be trackable.
 # Installation
