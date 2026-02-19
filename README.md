@@ -196,24 +196,25 @@ output_dir/
 │   └── QAssfilt_GTDB-Tk_Kraken2_MultiQC_Report.html
 │   └── QAssfilt_Abricate_Report.html
 │   └── QAssfilt_abritAMR_Report.html
-├── logs: Log file of each step run, including errors and information in detail.
-├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
-├── pipeline_parameters.txt: Options, parameters, time consumed, and version used in pipeline.
 │
 └── raw/
-    ├── spades_file: Raw output directory of each sample of the spades step.
-    ├── quast_before: Quast output before filtering.
-    ├── quast_after: Quast output after filtering.
-    ├── checkm2_before: CheckM2 output before filtering.
-    ├── checkm2_after: CheckM2 output after filtering.
-    ├── kraken2: kraken2 output of each sample. (before and after)
-    ├── gtdbtk:
-    │   ├── before: GTDB-TK output before filtering.
-    │   └── after: GTDB-TK output after filtering.
-    ├── abricate: the output of the abricate run in all available databases. (before and after)
-    └── abritamr:
-        ├── before: abritamr output before filtering.
-        └── after: abritamr output after filtering.
+│   ├── spades_file: Raw output directory of each sample of the spades step.
+│   ├── quast_before: Quast output before filtering.
+│   ├── quast_after: Quast output after filtering.
+│   ├── checkm2_before: CheckM2 output before filtering.
+│   ├── checkm2_after: CheckM2 output after filtering.
+│   ├── kraken2: kraken2 output of each sample. (before and after)
+│   ├── gtdbtk:
+│   │   ├── before: GTDB-TK output before filtering.
+│   │   └── after: GTDB-TK output after filtering.
+│   ├── abricate: the output of the abricate run in all available databases. (before and after)
+│   └── abritamr:
+│       ├── before: abritamr output before filtering.
+│       └── after: abritamr output after filtering.
+│
+├── logs: Log file of each step run, including errors and information in detail.
+├── pipeline_status.tsv: Status of each step/tool during and after pipeline execution.
+└── pipeline_parameters.txt: Options, parameters, time consumed, and version used in pipeline.
 ```
 ## Options and Parameters
 ##### --source_conda, -sc
