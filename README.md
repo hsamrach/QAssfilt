@@ -74,11 +74,11 @@ The installation above is for Linux OS only. If you are using others, please fin
 ## QAssfilt installation
 Currently, QAssfilt can be installed through conda (only one script will be installed, it won't conflict with the other tool):
 ```
-conda install -n base -c samrachhan11 qassfilt=1.3.5 -y #latest version
+conda install -n base -c samrachhan11 qassfilt=1.3.6 -y #latest version
 ```
 Or
 ```
-mamba install -n base -c samrachhan11 qassfilt=1.3.5 -y #latest version
+mamba install -n base -c samrachhan11 qassfilt=1.3.6 -y #latest version
 ```
 Test it with help option
 ```
@@ -237,9 +237,9 @@ By default, it will scan for conda.sh automatically via the paths below:
     /usr/local/mambaforge \
     /usr/local/conda
 ```
-##### --contigs, -cg (Contigs_Mode)
-Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and filter the contig files. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. (default: disable)
-##### --competitive, -cp (Competitive_Mode)
+##### --contigs, -cg (Contigs_Mode) (default: disable)
+Suppose you already have your assembled genome as contig files, but you would like to use our service to assess quality and the filtering system. In this case, you can use this option, and fastp and SPAdes will be automatically skipped. 
+##### --competitive, -cp (Competitive_Mode) (default: disable)
 Competitive Mode is designed for emergency analyses, maximizing parallel sample processing while safeguarding system resources from overload.
 
 This mode works by automatically detecting available CPUs and calculating the optimal number of parallel sample runs—using up to 90% of total CPUs divided by the specified --threads, -t (default: 8) to prevent overload and ensure system stability.
@@ -253,11 +253,11 @@ Number of samples that can run in parallel = 57​/8 ≈ 7 samples
 - Thus, 7 samples will run in parallel. As soon as one of these samples completes the last step (default: kraken2-a), the next sample in the queue will begin, ensuring efficient use of system resources.
 ```
 **Note:** once competitive mode is enabled, the workflow of GTDBTk, Abritamr, and Abricate will be changed to run GTDBTk-b/-a, abritamr-b, and abricate-b in parallel.
-##### --checkm2_db_path, -cd
+##### --checkm2_db_path, -cd 
 Use this option if you already have the CheckM2 database, so it won’t download a new one. Otherwise, if you don’t specify it, QAssfilt will check in the default path ($HOME/databases/CheckM2_database). If the CheckM2 database already exists in this default path, it won’t be downloaded, but if it does not exist, it will be downloaded into the default path.
 
 Note: please store only one (.dmnd) file in the database directory.
-##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr
+##### --kraken2_db_path, -kd | --gtdbtk_db_path, -gd | --abricate | --abritamr (default: disable)
 By default, these tools were skipped. Once they are triggered by providing an option or databases (see help information), the workflow will include them.
 
 Users have to had Kraken2 and GTDB-TK database downloaded. Otherwise, you can download through the link below:
