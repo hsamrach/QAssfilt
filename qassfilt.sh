@@ -2,7 +2,6 @@
 
 #All rights reserved. © 2025 QAssfilt, Samrach Han
 
-
 set -eo pipefail
 
 cleanup() {
@@ -34,7 +33,7 @@ SKIP_STEPS=()
 CONTIG_MODE=0
 COMPETITIVE_MODE=0
 INIT_MODE=0
-VERSION_QAssfilt=1.3.6
+VERSION_QAssfilt=1.3.7
 KRAKEN2_DB_PATH=""
 GTDBTK_DB_PATH=""
 CHECKM2DB_PATH=""
@@ -1114,7 +1113,7 @@ if [[ $CONTIG_MODE -eq 1 ]]; then
 
     while IFS= read -r -d '' FILE; do
         BASENAME=${FILE##*/}          # Faster than basename
-        SAMPLE=${BASENAME%%.*}
+        SAMPLE="${BASENAME%.*}"
 
         CONTIG_PATHS["$SAMPLE"]="$FILE"
         SAMPLES+=("$SAMPLE")
@@ -1134,12 +1133,12 @@ declare -A SAMPLE_SEEN
 while IFS= read -r -d '' file; do
     BASENAME=${file##*/}
 
-    if [[ "$BASENAME" =~ ^(.+)(_R?1(_[0-9]{3})?|_1)\.f(ast)?q(\.gz)?$ ]]; then
+    if [[ "$BASENAME" =~ ^(.+)[._-]R?1(_[0-9]{3})?\.f(ast)?q(\.gz)?$ ]]; then
         SAMPLE="${BASH_REMATCH[1]}"
         PAIRS["$SAMPLE,1"]="$file"
         SAMPLE_SEEN["$SAMPLE"]=1
 
-    elif [[ "$BASENAME" =~ ^(.+)(_R?2(_[0-9]{3})?|_2)\.f(ast)?q(\.gz)?$ ]]; then
+    elif [[ "$BASENAME" =~ ^(.+)[._-]R?2(_[0-9]{3})?\.f(ast)?q(\.gz)?$ ]]; then
         SAMPLE="${BASH_REMATCH[1]}"
         PAIRS["$SAMPLE,2"]="$file"
         SAMPLE_SEEN["$SAMPLE"]=1
@@ -1320,7 +1319,8 @@ run_spades() {
 run_quast_before() {
     local SAMPLE=$1
     local LOG_DIR="${OUTPUT_PATH}/logs"
-    local CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/${SAMPLE}.fasta"
+    local BASE_PATH="${OUTPUT_PATH}/contigs_before/${SAMPLE}"
+    local CONTIGS_BEFORE=$(ls "${BASE_PATH}".{fasta,fa,fna,fas,ffn} 2>/dev/null | head -n1)
     mkdir -p "$LOG_DIR"
 
     if is_skipped "QUAST-b"; then
@@ -1359,7 +1359,8 @@ run_quast_before() {
 
 run_checkm2_before() {
     local SAMPLE=$1
-    local CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/${SAMPLE}.fasta"
+    local BASE_PATH="${OUTPUT_PATH}/contigs_before/${SAMPLE}"
+    local CONTIGS_BEFORE=$(ls "${BASE_PATH}".{fasta,fa,fna,fas,ffn} 2>/dev/null | head -n1)
     local LOG_DIR="${OUTPUT_PATH}/logs"
     mkdir -p "$LOG_DIR"
 
@@ -1398,7 +1399,8 @@ run_checkm2_before() {
 run_filter() {
     local SAMPLE=$1
     local LOG_DIR="${OUTPUT_PATH}/logs"
-    local CONTIGS_BEFORE="${OUTPUT_PATH}/contigs_before/${SAMPLE}.fasta"
+    local BASE_PATH="${OUTPUT_PATH}/contigs_before/${SAMPLE}"
+    local CONTIGS_BEFORE=$(ls "${BASE_PATH}".{fasta,fa,fna,fas,ffn} 2>/dev/null | head -n1)
     local FILTERED_DIR="${OUTPUT_PATH}/contigs_filtered"
     local OUTFILTER="${FILTERED_DIR}/${SAMPLE}_filtered.fasta"
     mkdir -p "$LOG_DIR"
@@ -1447,7 +1449,6 @@ run_filter() {
 					if [[ -s "$TMP_OUT" ]]; then
 						mv "$TMP_OUT" "$OUTFILTER"
 					else
-						echo "[WARN] $SAMPLE: No contig passed coverage filter, keeping original input"
 						cp "$CONTIGS_BEFORE" "$OUTFILTER"
 						rm -f "$TMP_OUT"
 					fi
