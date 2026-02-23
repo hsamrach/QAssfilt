@@ -3,7 +3,7 @@ From: ubuntu:22.04
 
 %labels
     Author "hsamrach"
-    Version "1.3.6"
+    Version "1.3.7"
     Tool "QAssfilt"
 
 %post
@@ -50,7 +50,7 @@ conda update -n base -c conda-forge -y conda mamba
 # Install QAssfilt and sub-environments
 # ============================
 echo "=== Installing QAssfilt ==="
-mamba install -n base -c samrachhan11 -y qassfilt=1.3.6
+mamba install -n base -c samrachhan11 -y qassfilt=1.3.7
 
 # Sub-environments for tools
 mamba create -n qassfilt_abricate -y
